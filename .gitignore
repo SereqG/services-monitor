@@ -79,6 +79,7 @@ yarn-error.log*
 *.sqlite
 *.sqlite3
 storage/
+summaries/
 
 # ───────────────────────────────────────────────
 # Logs
