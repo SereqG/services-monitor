@@ -15,7 +15,7 @@ export function DiscoverForm({
     formState: { errors, isSubmitting },
   } = useForm<DiscoverFormValues>({
     resolver: zodResolver(discoverFormSchema),
-    defaultValues: { url: "", email: "", enable_ai_summary: false },
+    defaultValues: { url: "", enable_ai_summary: false },
   });
 
   return (
@@ -24,45 +24,34 @@ export function DiscoverForm({
       noValidate
       className="mt-8 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-2xl"
     >
-      <div className="flex flex-col gap-1">
-        <input
-          type="text"
-          inputMode="url"
-          autoComplete="url"
-          placeholder="https://example.com"
-          className="w-full rounded-md bg-background px-4 py-3 font-mono text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground/60 focus:ring-accent aria-invalid:ring-destructive"
-          aria-label="Website URL"
-          aria-invalid={!!errors.url}
-          {...register("url")}
-        />
-        {errors.url && (
-          <p className="px-1 text-xs text-destructive">{errors.url.message}</p>
-        )}
-      </div>
+      <div className="flex w-full gap-1">
+        <div className="flex flex-col gap-1 w-full">
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-        <div className="flex flex-1 flex-col gap-1">
           <input
-            type="email"
-            autoComplete="email"
-            placeholder="your@email.com"
-            className="w-full rounded-md bg-background px-4 py-3 font-mono text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground/60 focus:ring-accent aria-invalid:ring-destructive"
-            aria-label="Email address"
-            aria-invalid={!!errors.email}
-            {...register("email")}
+            type="text"
+            inputMode="url"
+            autoComplete="url"
+            placeholder="https://example.com"
+            className="w-full rounded-md bg-background px-4 py-3 font-mono text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground/60 focus:ring-accent aria-invalid:ring-destructive w-full"
+            aria-label="Website URL"
+            aria-invalid={!!errors.url}
+            {...register("url")}
           />
-          {errors.email && (
-            <p className="px-1 text-xs text-destructive">{errors.email.message}</p>
+          {errors.url && (
+            <p className="px-1 text-xs text-destructive">{errors.url.message}</p>
           )}
         </div>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-md bg-primary px-8 py-3 text-sm font-bold uppercase tracking-tight text-primary-foreground transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Discover pages
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-md bg-primary px-8 py-3 text-sm font-bold uppercase tracking-tight text-primary-foreground transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 min-w-52"
+          >
+            Discover pages
+          </button>
+        </div>
       </div>
+
 
       <div className="flex gap-3">
         <div className="flex flex-1 flex-col gap-1">

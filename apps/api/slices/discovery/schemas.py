@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 
 from core.config import settings
 
 
 class DiscoveryRequest(BaseModel):
     url: str
-    email: EmailStr
     max_sites: int | None = None
     max_depth: int | None = None
 

@@ -36,7 +36,6 @@ def _run(request: AuditRequest, ai_mock: AsyncMock):
 
 
 def test_audit_without_ai_summary_leaves_field_none():
-    request = AuditRequest(url="https://example.com/", email="t@example.com")
     ai_mock = AsyncMock()
     report = _run(request, ai_mock)
 
@@ -49,7 +48,6 @@ def test_audit_with_ai_summary_attaches_successful_summary(monkeypatch):
     monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
     monkeypatch.setattr(settings, "ai_summary_enabled", True)
     request = AuditRequest(
-        url="https://example.com/", email="t@example.com", enable_ai_summary=True
     )
     ai_mock = AsyncMock(
         return_value=AiSummary(status=AiSummaryStatus.ok, audit_id="a" * 32)
@@ -64,7 +62,6 @@ def test_audit_with_ai_summary_attaches_successful_summary(monkeypatch):
 def test_audit_ai_failure_does_not_break_audit(monkeypatch):
     monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
     request = AuditRequest(
-        url="https://example.com/", email="t@example.com", enable_ai_summary=True
     )
     ai_mock = AsyncMock(
         return_value=AiSummary(
@@ -82,7 +79,6 @@ def test_audit_ai_failure_does_not_break_audit(monkeypatch):
 def test_audit_ai_enabled_without_api_key_yields_error_summary(monkeypatch):
     monkeypatch.setattr(settings, "openrouter_api_key", None)
     request = AuditRequest(
-        url="https://example.com/", email="t@example.com", enable_ai_summary=True
     )
     ai_mock = AsyncMock()
     report = _run(request, ai_mock)
@@ -96,7 +92,6 @@ def test_audit_ai_enabled_without_api_key_yields_error_summary(monkeypatch):
 def test_stream_audit_emits_ai_summary_phase_events(monkeypatch):
     monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
     request = AuditRequest(
-        url="https://example.com/", email="t@example.com", enable_ai_summary=True
     )
     ai_mock = AsyncMock(
         return_value=AiSummary(status=AiSummaryStatus.ok, audit_id="a" * 32)

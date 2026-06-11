@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import re
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 
 
 class AuditInput(BaseModel):
     url: str
-    email: EmailStr
     report_name: str | None = None
 
     @field_validator("url")
@@ -28,7 +27,6 @@ class AuditInput(BaseModel):
 
 class ValidationResult(BaseModel):
     url: str
-    email: str
     report_name: str | None
     is_valid: bool
     errors: list[str]

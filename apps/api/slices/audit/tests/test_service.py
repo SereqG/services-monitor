@@ -122,7 +122,6 @@ def test_page_results_populated_from_selected_urls():
     ]
     request = AuditRequest(
         url="https://example.com/",
-        email="test@example.com",
         selected_urls=["https://example.com/", subpage],
     )
     patches = _patches({"slices.audit.service.run_discovery": patch(
@@ -148,7 +147,6 @@ def test_homepage_always_first_in_page_results():
     ]
     request = AuditRequest(
         url="https://example.com/",
-        email="test@example.com",
         selected_urls=["https://example.com/"],
     )
     patches = _patches({"slices.audit.service.run_discovery": patch(
@@ -177,7 +175,6 @@ def test_blocked_urls_excluded_from_page_results():
     ]
     request = AuditRequest(
         url="https://example.com/",
-        email="test@example.com",
         selected_urls=[allowed_sub, blocked],
     )
     patches = _patches({"slices.audit.service.run_discovery": patch(
@@ -203,7 +200,6 @@ def test_no_selected_urls_produces_homepage_only_page_results():
     ]
     request = AuditRequest(
         url="https://example.com/",
-        email="test@example.com",
     )
     patches = _patches({"slices.audit.service.run_discovery": patch(
         "slices.audit.service.run_discovery", new=AsyncMock(return_value=_discovery(discovered))
@@ -237,7 +233,6 @@ def test_performance_error_when_ttfb_unavailable():
             error="Request timed out",
         )
 
-    request = AuditRequest(url="https://example.com/", email="test@example.com")
 
     with (
         patch("slices.audit.service.validate_url", return_value="https://example.com/"),
@@ -259,7 +254,6 @@ def test_scope_limits_checks_to_selected():
     discovered = [DiscoveredUrl(url="https://example.com/", depth=0, status="allowed")]
     request = AuditRequest(
         url="https://example.com/",
-        email="test@example.com",
         scope=["seo"],
     )
     with (
@@ -288,7 +282,6 @@ def test_not_included_categories_excluded_from_score():
     discovered = [DiscoveredUrl(url="https://example.com/", depth=0, status="allowed")]
     request = AuditRequest(
         url="https://example.com/",
-        email="test@example.com",
         scope=["health"],
     )
     patches = _patches({"slices.audit.service.run_discovery": patch(
@@ -312,7 +305,6 @@ def test_empty_scope_defaults_to_all_checks():
     discovered = [DiscoveredUrl(url="https://example.com/", depth=0, status="allowed")]
     request = AuditRequest(
         url="https://example.com/",
-        email="test@example.com",
         scope=None,
     )
     patches = _patches({"slices.audit.service.run_discovery": patch(
@@ -341,7 +333,6 @@ def test_security_included_in_subpage_results():
     ]
     request = AuditRequest(
         url="https://example.com/",
-        email="test@example.com",
         selected_urls=["https://example.com/", subpage],
     )
     patches = _patches({"slices.audit.service.run_discovery": patch(

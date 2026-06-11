@@ -15,7 +15,6 @@ async def validate_audit_input(body: AuditInput) -> ValidationResult:
     url = service.validate_url(body.url)
     result = ValidationResult(
         url=url,
-        email=str(body.email),
         report_name=body.report_name,
         is_valid=True,
         errors=[],

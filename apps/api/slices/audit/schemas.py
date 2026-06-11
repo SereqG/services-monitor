@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 
 from core.config import settings
 from slices.discovery.schemas import DiscoveryResult
@@ -16,7 +16,6 @@ ALL_CHECKS: tuple[AuditCheckType, ...] = ("health", "seo", "accessibility", "sec
 
 class AuditRequest(BaseModel):
     url: str
-    email: EmailStr
     report_name: str | None = None
     selected_urls: list[str] | None = None
     discovery_result: DiscoveryResult | None = None

@@ -5,10 +5,6 @@ export const discoverFormSchema = z.object({
     .string()
     .min(1, "URL is required")
     .url("Must be a valid URL (e.g. https://example.com)"),
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Must be a valid email address"),
   max_sites: z
     .number()
     .int("Must be a whole number")
