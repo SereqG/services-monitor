@@ -16,6 +16,7 @@ import {
   issueSeverityColor,
 } from "@/lib/utils/scoring";
 import { ScoreRing } from "@/components/ui/ScoreRing";
+import { useI18n, localizeSeoMessage, localizeA11yMessage, localizeFinding } from "@/lib/i18n";
 
 function computePageScore(page: PageAuditResult): number | null {
   const scores: number[] = [];
@@ -57,13 +58,14 @@ function IssueRow({
   message: string;
   code: string;
 }) {
+  const { dict } = useI18n();
   return (
     <div className="flex items-start gap-3 rounded-lg border border-border bg-background p-3">
       <div className="flex shrink-0 flex-col items-center gap-1 pt-0.5">
         <span
           className={`rounded px-1.5 py-0.5 font-mono text-[9px] uppercase ${issueSeverityColor(severity as Severity | AccessibilitySeverity)}`}
         >
-          {severity}
+          {dict.severity[severity] ?? severity}
         </span>
         <span className="font-mono text-[9px] text-muted-foreground">{source}</span>
       </div>
@@ -82,6 +84,7 @@ function IssueSection({
   title: string;
   issues: Array<{ severity: string; source: string; message: string; code: string }>;
 }) {
+  const { dict } = useI18n();
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
@@ -91,7 +94,7 @@ function IssueSection({
         <span
           className={`font-mono text-[10px] ${issues.length > 0 ? "text-warning" : "text-accent"}`}
         >
-          {issues.length > 0 ? `${issues.length} issue${issues.length !== 1 ? "s" : ""}` : "no issues"}
+          {issues.length > 0 ? dict.pageResult.issues(issues.length) : dict.pageResult.noIssues}
         </span>
       </div>
       {issues.length > 0 && (
@@ -106,6 +109,7 @@ function IssueSection({
 }
 
 export function PageResultCard({ page }: { page: PageAuditResult }) {
+  const { lang, dict } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const { security } = page;
 
@@ -134,23 +138,26 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
   const seoIssues = (page.seo?.issues ?? []).map((i: SeoIssue) => ({
     severity: i.severity,
     source: "SEO",
-    message: i.message,
+    message: localizeSeoMessage(i, lang),
     code: i.code,
   }));
 
   const a11yIssues = (page.accessibility?.issues ?? []).map(
-    (i: AccessibilityIssue) => ({
-      severity: i.severity,
-      source: "A11Y",
-      message: i.count > 1 ? `${i.message} (×${i.count})` : i.message,
-      code: i.code,
-    })
+    (i: AccessibilityIssue) => {
+      const message = localizeA11yMessage(i, lang);
+      return {
+        severity: i.severity,
+        source: "A11Y",
+        message: i.count > 1 ? `${message} (×${i.count})` : message,
+        code: i.code,
+      };
+    }
   );
 
   const securityIssues = (security?.all_findings ?? []).map((f: SecurityFinding) => ({
     severity: f.severity,
     source: f.category.toUpperCase(),
-    message: f.title,
+    message: localizeFinding(f, lang).title,
     code: f.affected_resource ?? "",
   }));
 
@@ -170,7 +177,7 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
           {totalIssues > 0 && (
             <div className="mt-1 font-mono text-[10px]">
               <span className="text-warning">
-                {totalIssues} issue{totalIssues !== 1 ? "s" : ""}
+                {dict.pageResult.issues(totalIssues)}
               </span>
             </div>
           )}
@@ -209,7 +216,7 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
               onClick={() => setExpanded((v) => !v)}
               className="shrink-0 rounded border border-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground transition-colors hover:border-accent hover:text-accent"
             >
-              {expanded ? "Hide" : "Details"}
+              {expanded ? dict.pageResult.hide : dict.pageResult.details}
             </button>
           )}
         </div>
@@ -224,7 +231,7 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
               <div className="flex flex-col items-center gap-2">
                 <ScoreRing score={pageScore} status={pageStatus} />
                 <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Page score
+                  {dict.pageResult.pageScore}
                 </span>
               </div>
             )}
@@ -233,12 +240,12 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
               {page.health && (
                 <div className="space-y-3">
                   <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Health
+                    {dict.pageResult.health}
                   </span>
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-[10px] text-muted-foreground w-16">
-                        Status
+                        {dict.pageResult.status}
                       </span>
                       <span className={`font-mono text-sm font-bold ${httpColor}`}>
                         {httpLabel}{" "}
@@ -247,7 +254,7 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-[10px] text-muted-foreground w-16">
-                        TTFB
+                        {dict.pageResult.ttfb}
                       </span>
                       <span className={`font-mono text-sm font-bold ${ttfbColor}`}>
                         {ttfbLabel}
@@ -255,13 +262,12 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
                     </div>
                     {page.health.has_redirect_loop && (
                       <div className="font-mono text-[10px] text-destructive">
-                        Redirect loop detected
+                        {dict.pageResult.redirectLoop}
                       </div>
                     )}
                     {page.health.redirect_chain.length > 0 && (
                       <div className="font-mono text-[10px] text-muted-foreground">
-                        {page.health.redirect_chain.length} redirect
-                        {page.health.redirect_chain.length !== 1 ? "s" : ""}
+                        {dict.pageResult.redirects(page.health.redirect_chain.length)}
                       </div>
                     )}
                   </div>
@@ -271,7 +277,7 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
               {page.seo && (
                 <div className="space-y-1">
                   <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    SEO score
+                    {dict.pageResult.seoScore}
                   </span>
                   <div
                     className={`font-mono text-3xl font-bold ${statusColor(scoreStatus(page.seo.score))}`}
@@ -284,7 +290,7 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
               {page.accessibility && (
                 <div className="space-y-1">
                   <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    A11Y score
+                    {dict.pageResult.a11yScore}
                   </span>
                   <div
                     className={`font-mono text-3xl font-bold ${statusColor(scoreStatus(page.accessibility.score))}`}
@@ -297,7 +303,7 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
               {security && (
                 <div className="space-y-1">
                   <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Security score
+                    {dict.pageResult.securityScore}
                   </span>
                   <div
                     className={`font-mono text-3xl font-bold ${statusColor(scoreStatus(security.overall_score))}`}
@@ -311,13 +317,13 @@ export function PageResultCard({ page }: { page: PageAuditResult }) {
 
           {/* Per-category issues */}
           {page.seo && (
-            <IssueSection title="SEO issues" issues={seoIssues} />
+            <IssueSection title={dict.pageResult.seoIssues} issues={seoIssues} />
           )}
           {page.accessibility && (
-            <IssueSection title="Accessibility issues" issues={a11yIssues} />
+            <IssueSection title={dict.pageResult.accessibilityIssues} issues={a11yIssues} />
           )}
           {security && (
-            <IssueSection title="Security findings" issues={securityIssues} />
+            <IssueSection title={dict.pageResult.securityFindings} issues={securityIssues} />
           )}
         </div>
       )}

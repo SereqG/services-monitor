@@ -1,6 +1,18 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
+
+Language = Literal["en", "pl"]
+
+# Appended to the user instruction when the audit is in Polish mode. JSON field
+# names stay in English (they must match the response schema) — only the values
+# are written in Polish, and as natural prose rather than a literal translation.
+_PL_LANGUAGE_INSTRUCTION = """\
+
+Write every text value in natural, fluent Polish — as a native speaker would \
+explain this to a non-technical website owner: friendly, clear and helpful. Do \
+NOT translate word-for-word; phrase things the way they are naturally said in \
+Polish. Keep all JSON field names exactly as written above, in English."""
 
 # System prompt — kept verbatim from docs/ai_audit_summary_architecture_claude_prompt.md.
 SYSTEM_PROMPT = """\
@@ -41,15 +53,22 @@ matching exactly this shape:
 Base every statement on the retrieved data. Do not invent scores, grades or issues."""
 
 
-def build_phase1_messages() -> list[dict[str, Any]]:
+def _apply_language(content: str, language: Language) -> str:
+    """Append the Polish output instruction when in Polish mode; English is the default."""
+    return content + _PL_LANGUAGE_INSTRUCTION if language == "pl" else content
+
+
+def build_phase1_messages(language: Language = "en") -> list[dict[str, Any]]:
     """Messages for completion 1 — the overall website summary."""
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": _PHASE1_INSTRUCTIONS},
+        {"role": "user", "content": _apply_language(_PHASE1_INSTRUCTIONS, language)},
     ]
 
 
-def build_phase2_messages(problematic_urls: list[str]) -> list[dict[str, Any]]:
+def build_phase2_messages(
+    problematic_urls: list[str], language: Language = "en"
+) -> list[dict[str, Any]]:
     """Messages for completion 2 — per-page analysis of the weakest pages."""
     url_lines = "\n".join(f"- {url}" for url in problematic_urls)
     content = f"""\
@@ -76,5 +95,5 @@ Include exactly one entry per page listed above. Base every statement on the \
 retrieved data. Do not invent scores or issues."""
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": content},
+        {"role": "user", "content": _apply_language(content, language)},
     ]

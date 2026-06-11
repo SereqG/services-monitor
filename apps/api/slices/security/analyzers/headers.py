@@ -75,10 +75,12 @@ def analyze_headers(response_headers: httpx.Headers) -> HeadersResult:
             headers_missing.append(header_name)
             findings.append(
                 SecurityFinding(
+                    code="MISSING_SECURITY_HEADER",
                     category="headers",
                     title=f"Missing {header_name}",
                     description=description,
                     severity=severity,
+                    params={"header": header_name},
                     affected_resource=header_name,
                     remediation=remediation,
                 )

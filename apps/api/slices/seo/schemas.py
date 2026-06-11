@@ -25,7 +25,10 @@ class HeadingStructure(BaseModel):
 class SeoIssue(BaseModel):
     code: str
     severity: str  # critical | high | medium | low | info
-    message: str
+    message: str  # English; deterministic source of truth
+    # Structured values behind any interpolated message, so clients can render a
+    # localized template without re-parsing `message`. Empty for static issues.
+    params: dict[str, int | str] = {}
     detail: str | None = None
 
 

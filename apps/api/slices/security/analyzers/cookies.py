@@ -39,10 +39,12 @@ def analyze_cookies(response_headers: httpx.Headers) -> CookieResult:
         if not attrs["secure"]:
             findings.append(
                 SecurityFinding(
+                    code="COOKIE_MISSING_SECURE",
                     category="cookies",
                     title=f"Missing Secure flag on cookie '{name}'",
                     description="Cookie can be transmitted over unencrypted HTTP connections.",
                     severity=Severity.medium,
+                    params={"cookie": name},
                     evidence=raw_cookie,
                     affected_resource=name,
                     remediation="Add the Secure flag to cookies that should only be sent over HTTPS.",
@@ -52,10 +54,12 @@ def analyze_cookies(response_headers: httpx.Headers) -> CookieResult:
         if not attrs["httponly"]:
             findings.append(
                 SecurityFinding(
+                    code="COOKIE_MISSING_HTTPONLY",
                     category="cookies",
                     title=f"Missing HttpOnly flag on cookie '{name}'",
                     description="Cookie is accessible via JavaScript, increasing XSS risk.",
                     severity=Severity.medium,
+                    params={"cookie": name},
                     evidence=raw_cookie,
                     affected_resource=name,
                     remediation="Add the HttpOnly flag to cookies that do not require JavaScript access.",
@@ -66,10 +70,12 @@ def analyze_cookies(response_headers: httpx.Headers) -> CookieResult:
         if samesite is None:
             findings.append(
                 SecurityFinding(
+                    code="COOKIE_MISSING_SAMESITE",
                     category="cookies",
                     title=f"Missing SameSite attribute on cookie '{name}'",
                     description="Cookie is sent on all cross-origin requests, increasing CSRF risk.",
                     severity=Severity.medium,
+                    params={"cookie": name},
                     evidence=raw_cookie,
                     affected_resource=name,
                     remediation="Set SameSite=Strict or SameSite=Lax on session cookies.",
@@ -78,10 +84,12 @@ def analyze_cookies(response_headers: httpx.Headers) -> CookieResult:
         elif samesite == "none" and not attrs["secure"]:
             findings.append(
                 SecurityFinding(
+                    code="COOKIE_SAMESITE_NONE_INSECURE",
                     category="cookies",
                     title=f"SameSite=None without Secure on cookie '{name}'",
                     description="SameSite=None is invalid without the Secure flag.",
                     severity=Severity.high,
+                    params={"cookie": name},
                     evidence=raw_cookie,
                     affected_resource=name,
                     remediation="Add the Secure flag when using SameSite=None.",

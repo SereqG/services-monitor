@@ -70,6 +70,7 @@ class AiSummary(BaseModel):
     status: AiSummaryStatus
     audit_id: str
     model: str | None = None
+    language: str = "en"  # language the prose was generated in; for traceability
     generated_at: str | None = None
     summary: AiSummaryOverview | None = None
     problematic_pages: list[AiPageSummary] = Field(default_factory=list)

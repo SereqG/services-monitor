@@ -80,6 +80,15 @@ def test_finding_includes_remediation():
     assert all(f.remediation is not None for f in result.findings)
 
 
+def test_finding_carries_stable_code_and_params():
+    # Code + params are the localization contract; the English title is unchanged.
+    result = analyze_headers(_NONE_PRESENT)
+    csp = next(f for f in result.findings if f.params.get("header") == "Content-Security-Policy")
+    assert csp.code == "MISSING_SECURITY_HEADER"
+    assert csp.title == "Missing Content-Security-Policy"
+    assert all(f.code == "MISSING_SECURITY_HEADER" for f in result.findings)
+
+
 def test_nine_headers_checked():
     assert len(SECURITY_HEADERS) == 9
 

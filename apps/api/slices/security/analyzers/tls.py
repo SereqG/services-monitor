@@ -46,6 +46,7 @@ async def analyze_tls(url: str) -> TlsResult:
             certificate_expiry_days=None,
             findings=[
                 SecurityFinding(
+                    code="HTTPS_NOT_USED",
                     category="tls",
                     title="HTTPS not used",
                     description="The target URL does not use HTTPS, exposing traffic to interception.",
@@ -70,10 +71,12 @@ async def analyze_tls(url: str) -> TlsResult:
         if tls_version in WEAK_TLS_VERSIONS:
             findings.append(
                 SecurityFinding(
+                    code="WEAK_TLS_VERSION",
                     category="tls",
                     title=f"Weak TLS version: {tls_version}",
                     description=f"{tls_version} is deprecated and cryptographically weak.",
                     severity=Severity.high,
+                    params={"version": tls_version or ""},
                     evidence=tls_version,
                     affected_resource=url,
                     remediation="Disable TLS 1.0 and TLS 1.1. Require TLS 1.2 or TLS 1.3.",
@@ -91,10 +94,12 @@ async def analyze_tls(url: str) -> TlsResult:
                 certificate_valid = False
                 findings.append(
                     SecurityFinding(
+                        code="TLS_CERT_EXPIRED",
                         category="tls",
                         title="Expired TLS certificate",
                         description="The TLS certificate has expired and will cause browser errors.",
                         severity=Severity.critical,
+                        params={"days": abs(days_left)},
                         evidence=f"Expired {abs(days_left)} day(s) ago",
                         affected_resource=hostname,
                         remediation="Renew the TLS certificate immediately.",
@@ -103,10 +108,12 @@ async def analyze_tls(url: str) -> TlsResult:
             elif days_left < 14:
                 findings.append(
                     SecurityFinding(
+                        code="TLS_CERT_EXPIRING_SOON",
                         category="tls",
                         title="TLS certificate expiring within 14 days",
                         description=f"Certificate expires in {days_left} day(s).",
                         severity=Severity.high,
+                        params={"days": days_left},
                         evidence=f"{days_left} day(s) remaining",
                         affected_resource=hostname,
                         remediation="Renew the TLS certificate before expiry.",
@@ -115,10 +122,12 @@ async def analyze_tls(url: str) -> TlsResult:
             elif days_left < 30:
                 findings.append(
                     SecurityFinding(
+                        code="TLS_CERT_EXPIRING",
                         category="tls",
                         title="TLS certificate expiring within 30 days",
                         description=f"Certificate expires in {days_left} day(s).",
                         severity=Severity.medium,
+                        params={"days": days_left},
                         evidence=f"{days_left} day(s) remaining",
                         affected_resource=hostname,
                         remediation="Plan to renew the TLS certificate.",
@@ -129,10 +138,12 @@ async def analyze_tls(url: str) -> TlsResult:
         certificate_valid = False
         findings.append(
             SecurityFinding(
+                code="TLS_CERT_VERIFICATION_FAILED",
                 category="tls",
                 title="TLS certificate verification failed",
                 description=f"SSL verification error: {exc}",
                 severity=Severity.critical,
+                params={"error": str(exc)},
                 evidence=str(exc),
                 affected_resource=url,
                 remediation="Fix the TLS certificate (check chain, hostname, expiry).",
@@ -141,10 +152,12 @@ async def analyze_tls(url: str) -> TlsResult:
     except ssl.SSLError as exc:
         findings.append(
             SecurityFinding(
+                code="TLS_HANDSHAKE_FAILED",
                 category="tls",
                 title="TLS handshake failed",
                 description=f"SSL error during connection: {exc}",
                 severity=Severity.critical,
+                params={"error": str(exc)},
                 evidence=str(exc),
                 affected_resource=url,
                 remediation="Investigate and fix the TLS configuration.",
@@ -153,10 +166,12 @@ async def analyze_tls(url: str) -> TlsResult:
     except (socket.timeout, ConnectionRefusedError, OSError) as exc:
         findings.append(
             SecurityFinding(
+                code="TLS_UNREACHABLE",
                 category="tls",
                 title="TLS connection unreachable",
                 description=f"Could not connect to check TLS: {exc}",
                 severity=Severity.informational,
+                params={"error": str(exc)},
                 evidence=str(exc),
                 affected_resource=url,
                 remediation="Verify the host is accessible and TLS is configured.",

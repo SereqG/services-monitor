@@ -66,6 +66,7 @@ async def analyze_dns(domain: str) -> DnsResult:
     if not spf:
         findings.append(
             SecurityFinding(
+                code="MISSING_SPF",
                 category="dns",
                 title="Missing SPF record",
                 description="No SPF record found. Sender Policy Framework is not enforced.",
@@ -78,6 +79,7 @@ async def analyze_dns(domain: str) -> DnsResult:
     if not dmarc:
         findings.append(
             SecurityFinding(
+                code="MISSING_DMARC",
                 category="dns",
                 title="Missing DMARC record",
                 description="No DMARC policy found. Email spoofing is not mitigated.",
@@ -90,6 +92,7 @@ async def analyze_dns(domain: str) -> DnsResult:
     if not caa:
         findings.append(
             SecurityFinding(
+                code="MISSING_CAA",
                 category="dns",
                 title="Missing CAA record",
                 description="No CAA record restricts certificate issuance for this domain.",
@@ -102,6 +105,7 @@ async def analyze_dns(domain: str) -> DnsResult:
     if not dnssec:
         findings.append(
             SecurityFinding(
+                code="DNSSEC_NOT_ENABLED",
                 category="dns",
                 title="DNSSEC not enabled",
                 description="DNSSEC is not configured. DNS responses cannot be cryptographically verified.",

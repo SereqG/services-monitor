@@ -68,6 +68,13 @@ def test_build_success_summary():
     assert summary.summary.overall_assessment == "All good"
     assert summary.error is None
     assert summary.generated_at is not None
+    assert summary.language == "en"  # default preserves prior behavior
+
+
+def test_build_success_summary_records_language():
+    overview = AiSummaryOverview(overall_assessment="Wszystko w porządku")
+    summary = build_success_summary("a" * 32, overview, [], "pl")
+    assert summary.language == "pl"
 
 
 def test_build_error_summary():
@@ -75,3 +82,9 @@ def test_build_error_summary():
     assert summary.status == AiSummaryStatus.error
     assert summary.error == "Something failed"
     assert summary.summary is None
+    assert summary.language == "en"
+
+
+def test_build_error_summary_records_language():
+    summary = build_error_summary("a" * 32, "Coś poszło nie tak", "pl")
+    assert summary.language == "pl"

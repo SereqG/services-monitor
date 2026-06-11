@@ -65,6 +65,31 @@ def test_issues_for_multiple_h1():
     assert any(i.code == "MULTIPLE_H1" for i in issues)
 
 
+def test_parameterized_issue_exposes_structured_params():
+    # The English message stays the deterministic source of truth; `params`
+    # carries the same values structurally so clients can localize the template.
+    meta = MetaData(
+        title="short", title_length=5, description="x" * 130, description_length=130,
+        canonical="/", robots_meta=None, og_title=None, og_description=None, og_image=None,
+    )
+    headings = HeadingStructure(h1_count=1, h2_count=0, h3_count=0, h1_texts=["Main"])
+    issues = collect_issues(meta, headings)
+    title_issue = next(i for i in issues if i.code == "TITLE_TOO_SHORT")
+    assert title_issue.message == "Title too short (5 chars, min 30)"
+    assert title_issue.params == {"length": 5, "min": 30}
+
+
+def test_static_issue_has_empty_params():
+    meta = MetaData(
+        title=None, title_length=None, description="x" * 130, description_length=130,
+        canonical="/", robots_meta=None, og_title=None, og_description=None, og_image=None,
+    )
+    headings = HeadingStructure(h1_count=1, h2_count=0, h3_count=0, h1_texts=["Main"])
+    issues = collect_issues(meta, headings)
+    title_issue = next(i for i in issues if i.code == "MISSING_TITLE")
+    assert title_issue.params == {}
+
+
 def test_score_deducted_by_severity():
     issues = [SeoIssue(code="X", severity="critical", message="x")]
     assert calculate_seo_score(issues) == 75

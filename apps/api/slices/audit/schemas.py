@@ -13,6 +13,10 @@ AuditCheckType = Literal["health", "seo", "accessibility", "security"]
 
 ALL_CHECKS: tuple[AuditCheckType, ...] = ("health", "seo", "accessibility", "security")
 
+# Language for the AI explanation layer. Affects only AI-generated prose — the
+# deterministic audit data and finding codes are always language-neutral.
+SummaryLanguage = Literal["en", "pl"]
+
 
 class AuditRequest(BaseModel):
     url: str
@@ -23,6 +27,7 @@ class AuditRequest(BaseModel):
     max_sites: int | None = None
     max_depth: int | None = None
     enable_ai_summary: bool = False
+    language: SummaryLanguage = "en"
 
     @field_validator("max_sites")
     @classmethod

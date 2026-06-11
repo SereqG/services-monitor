@@ -47,22 +47,25 @@ def build_success_summary(
     audit_id: str,
     overview: AiSummaryOverview,
     pages: list[AiPageSummary],
+    language: str = "en",
 ) -> AiSummary:
     return AiSummary(
         status=AiSummaryStatus.ok,
         audit_id=audit_id,
         model=settings.ai_summary_model,
+        language=language,
         generated_at=datetime.now(tz=timezone.utc).isoformat(),
         summary=overview,
         problematic_pages=pages,
     )
 
 
-def build_error_summary(audit_id: str, error: str) -> AiSummary:
+def build_error_summary(audit_id: str, error: str, language: str = "en") -> AiSummary:
     return AiSummary(
         status=AiSummaryStatus.error,
         audit_id=audit_id,
         model=settings.ai_summary_model,
+        language=language,
         generated_at=datetime.now(tz=timezone.utc).isoformat(),
         error=error,
     )

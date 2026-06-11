@@ -110,6 +110,7 @@ def test_http_error_raises_service_monitor_error():
 def test_all_findings_aggregated_from_sub_results():
     from slices.security.schemas import SecurityFinding, Severity
     finding = SecurityFinding(
+        code="MISSING_SECURITY_HEADER",
         category="headers", title="Missing X-Frame-Options",
         description="desc", severity=Severity.medium,
     )

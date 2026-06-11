@@ -82,7 +82,10 @@ async def _audit_page(
 
 
 async def _generate_ai_summary(
-    client: httpx.AsyncClient, report: AuditReport, audit_id: str
+    client: httpx.AsyncClient,
+    report: AuditReport,
+    audit_id: str,
+    language: str = "en",
 ) -> AiSummary:
     """Run the optional AI explanation layer, respecting server configuration.
 
@@ -90,7 +93,7 @@ async def _generate_ai_summary(
     error summary rather than failing the audit.
     """
     if settings.ai_summary_enabled and settings.openrouter_api_key:
-        return await safe_generate_ai_summary(client, report, audit_id)
+        return await safe_generate_ai_summary(client, report, audit_id, language)
     logger.info(
         "function=_generate_ai_summary | audit_id=%s status=error reason=not_configured",
         audit_id,
@@ -98,6 +101,7 @@ async def _generate_ai_summary(
     return AiSummary(
         status=AiSummaryStatus.error,
         audit_id=audit_id,
+        language=language,
         error="AI summary is not configured on this server.",
     )
 
@@ -263,7 +267,9 @@ async def run_audit(client: httpx.AsyncClient, request: AuditRequest) -> AuditRe
     )
 
     if request.enable_ai_summary:
-        report.ai_summary = await _generate_ai_summary(client, report, audit_id)
+        report.ai_summary = await _generate_ai_summary(
+            client, report, audit_id, request.language
+        )
 
     save_summary(report)
     return report
@@ -492,7 +498,9 @@ async def stream_audit(
             message="Generating AI summary…",
             elapsed_seconds=_elapsed(start),
         )
-        report.ai_summary = await _generate_ai_summary(client, report, audit_id)
+        report.ai_summary = await _generate_ai_summary(
+            client, report, audit_id, request.language
+        )
         if report.ai_summary.status == AiSummaryStatus.ok:
             yield AuditEvent(
                 type=AuditEventType.phase,

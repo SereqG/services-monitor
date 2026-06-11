@@ -1,20 +1,27 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { discoverFormSchema, type DiscoverFormValues } from "@/lib/schemas/discoverForm";
+import { makeDiscoverFormSchema, type DiscoverFormValues } from "@/lib/schemas/discoverForm";
+import { useI18n } from "@/lib/i18n";
 
 export function DiscoverForm({
   onSubmit,
 }: {
   onSubmit: (values: DiscoverFormValues) => void;
 }) {
+  const { dict } = useI18n();
+  const schema = useMemo(
+    () => makeDiscoverFormSchema(dict.discoverForm.validation),
+    [dict],
+  );
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<DiscoverFormValues>({
-    resolver: zodResolver(discoverFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: { url: "", enable_ai_summary: false },
   });
 
@@ -31,9 +38,9 @@ export function DiscoverForm({
             type="text"
             inputMode="url"
             autoComplete="url"
-            placeholder="https://example.com"
+            placeholder={dict.discoverForm.urlPlaceholder}
             className="w-full rounded-md bg-background px-4 py-3 font-mono text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground/60 focus:ring-accent aria-invalid:ring-destructive w-full"
-            aria-label="Website URL"
+            aria-label={dict.discoverForm.urlAriaLabel}
             aria-invalid={!!errors.url}
             {...register("url")}
           />
@@ -47,7 +54,7 @@ export function DiscoverForm({
             disabled={isSubmitting}
             className="rounded-md bg-primary px-8 py-3 text-sm font-bold uppercase tracking-tight text-primary-foreground transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 min-w-52"
           >
-            Discover pages
+            {dict.discoverForm.discoverButton}
           </button>
         </div>
       </div>
@@ -56,7 +63,7 @@ export function DiscoverForm({
       <div className="flex gap-3">
         <div className="flex flex-1 flex-col gap-1">
           <label className="px-1 text-xs text-muted-foreground">
-            Max pages
+            {dict.discoverForm.maxPages}
           </label>
           <input
             type="number"
@@ -65,7 +72,7 @@ export function DiscoverForm({
             min={1}
             max={500}
             className="w-full rounded-md bg-background px-4 py-2 font-mono text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground/40 focus:ring-accent aria-invalid:ring-destructive"
-            aria-label="Max pages to discover"
+            aria-label={dict.discoverForm.maxPagesAria}
             aria-invalid={!!errors.max_sites}
             {...register("max_sites", { setValueAs: (v) => (v === "" ? undefined : Number(v)) })}
           />
@@ -75,7 +82,7 @@ export function DiscoverForm({
         </div>
         <div className="flex flex-1 flex-col gap-1">
           <label className="px-1 text-xs text-muted-foreground">
-            Max depth
+            {dict.discoverForm.maxDepth}
           </label>
           <input
             type="number"
@@ -84,7 +91,7 @@ export function DiscoverForm({
             min={0}
             max={3}
             className="w-full rounded-md bg-background px-4 py-2 font-mono text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground/40 focus:ring-accent aria-invalid:ring-destructive"
-            aria-label="Max crawl depth"
+            aria-label={dict.discoverForm.maxDepthAria}
             aria-invalid={!!errors.max_depth}
             {...register("max_depth", { setValueAs: (v) => (v === "" ? undefined : Number(v)) })}
           />
@@ -101,11 +108,9 @@ export function DiscoverForm({
           {...register("enable_ai_summary")}
         />
         <span className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium">AI-Powered Summary</span>
+          <span className="text-sm font-medium">{dict.discoverForm.aiSummaryTitle}</span>
           <span className="text-xs leading-normal text-muted-foreground">
-            Get a simplified explanation of your audit results, including overall
-            website health, key problems, and recommended improvements. AI summaries
-            take slightly longer to generate and may increase processing cost.
+            {dict.discoverForm.aiSummaryDescription}
           </span>
         </span>
       </label>

@@ -47,6 +47,7 @@ async def analyze_best_practices(
     if not security_txt_present:
         findings.append(
             SecurityFinding(
+                code="MISSING_SECURITY_TXT",
                 category="best_practices",
                 title="Missing security.txt",
                 description="No security.txt found at /.well-known/security.txt or /security.txt.",
@@ -59,6 +60,7 @@ async def analyze_best_practices(
     if sourcemaps_found:
         findings.append(
             SecurityFinding(
+                code="SOURCE_MAPS_EXPOSED",
                 category="best_practices",
                 title="Source maps referenced in production assets",
                 description=(
@@ -66,6 +68,7 @@ async def analyze_best_practices(
                     "that expose application source code."
                 ),
                 severity=Severity.medium,
+                params={"count": len(sourcemaps_found)},
                 evidence="; ".join(sourcemaps_found[:3]),
                 affected_resource=base_url,
                 remediation="Disable source map generation or restrict access to .map files in production.",

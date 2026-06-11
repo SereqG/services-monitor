@@ -219,6 +219,7 @@ def test_no_selected_urls_produces_homepage_only_page_results():
 
 def test_performance_error_when_ttfb_unavailable():
     discovered = [DiscoveredUrl(url="https://example.com/", depth=0, status="allowed")]
+    request = AuditRequest(url="https://example.com/")
 
     def _health_timeout(_client, url: str) -> HealthCheckResult:
         return HealthCheckResult(

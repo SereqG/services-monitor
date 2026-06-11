@@ -14,10 +14,14 @@ class Severity(str, Enum):
 
 
 class SecurityFinding(BaseModel):
+    code: str  # stable identifier; the deterministic key clients localize by
     category: str
-    title: str
+    title: str  # English; deterministic source of truth
     description: str
     severity: Severity
+    # Structured values behind any interpolated title/description (e.g. the
+    # header or cookie name), so clients can render a localized template.
+    params: dict[str, str | int] = {}
     evidence: str | None = None
     affected_resource: str | None = None
     remediation: str | None = None

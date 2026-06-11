@@ -403,6 +403,30 @@ The user is not a developer.
 
 ---
 
+# Output Language (English / Polish)
+
+The AI explanation layer can produce its prose in **English (default) or Polish**, selected
+per audit. This affects **only AI-generated text** — the curated dataset, finding codes and all
+deterministic audit data stay language-neutral.
+
+How it flows:
+
+- `AuditRequest.language` (`"en" | "pl"`, default `"en"`) carries the choice. The frontend sets
+  it from the global language toggle at audit time.
+- `audit.service` threads `language` through `_generate_ai_summary` →
+  `safe_generate_ai_summary` / `generate_ai_summary` → `prompt_builder`.
+- When `language == "pl"`, `prompt_builder` **appends** an instruction to the phase-1 and phase-2
+  user messages (the system prompt above is unchanged): respond in natural, fluent Polish for a
+  non-technical reader, do not translate word-for-word, and **keep all JSON field names in
+  English** so the response still validates against the response schema.
+- The chosen language is recorded on `AiSummary.language` for traceability.
+
+Note: the summary is generated once at audit time and stored on the report. Switching the UI
+language afterward re-renders the static UI and findings instantly but does **not** regenerate an
+existing AI summary — it stays in the language it was produced in.
+
+---
+
 # Structured AI Output
 
 The response must follow a strict schema.

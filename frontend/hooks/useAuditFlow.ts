@@ -5,6 +5,7 @@ import { validateAuditInput, streamDiscovery, streamAudit } from "@/lib/api";
 import type { AuditReport, AuditCheckType, DiscoveryResult } from "@/lib/types/api";
 import { ALL_AUDIT_CHECKS } from "@/lib/types/api";
 import type { DiscoverFormValues } from "@/lib/schemas/discoverForm";
+import { useI18n } from "@/lib/i18n";
 
 export type AppState = "idle" | "discovering" | "selecting" | "auditing" | "done" | "error";
 
@@ -30,9 +31,9 @@ function useClientTimer(active: boolean): number | null {
 }
 
 export function useAuditFlow() {
+  const { lang } = useI18n();
   const [formValues, setFormValues] = useState<DiscoverFormValues>({
     url: "",
-    email: "",
     enable_ai_summary: false,
   });
   const [appState, setAppState] = useState<AppState>("idle");
@@ -61,9 +62,9 @@ export function useAuditFlow() {
     setDiscoveryMaxDuration(null);
 
     try {
-      await validateAuditInput({ url: values.url, email: values.email });
+      await validateAuditInput({ url: values.url });
       const result = await streamDiscovery(
-        { url: values.url, email: values.email, max_sites: values.max_sites, max_depth: values.max_depth },
+        { url: values.url, max_sites: values.max_sites, max_depth: values.max_depth },
         (event) => {
           setProgressMessages((prev) => [...prev, event.message]);
           console.log("Discovery event:", event);
@@ -93,13 +94,13 @@ export function useAuditFlow() {
       const result = await streamAudit(
         {
           url: formValues.url,
-          email: formValues.email,
           selected_urls: Array.from(selectedUrls),
           discovery_result: discovery,
           scope: scope.length > 0 ? scope : null,
           max_sites: formValues.max_sites,
           max_depth: formValues.max_depth,
           enable_ai_summary: formValues.enable_ai_summary,
+          language: lang,
         },
         (event) => {
           setAuditProgressMessages((prev) => [...prev, event.message]);

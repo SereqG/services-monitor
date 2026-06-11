@@ -50,6 +50,7 @@ def analyze_dependencies(html: str) -> DependencyResult:
             threshold_str = ".".join(str(x) for x in threshold)
             findings.append(
                 SecurityFinding(
+                    code="OUTDATED_JS_LIBRARY",
                     category="dependencies",
                     title=f"Outdated {lib_name} ({version_str})",
                     description=(
@@ -57,6 +58,7 @@ def analyze_dependencies(html: str) -> DependencyResult:
                         f"{threshold_str} and may contain known vulnerabilities."
                     ),
                     severity=Severity.high,
+                    params={"library": lib_name, "version": version_str, "minimum": threshold_str},
                     evidence=f"{lib_name}@{version_str}",
                     affected_resource=lib_name,
                     remediation=f"Upgrade {lib_name} to version {threshold_str} or later.",
@@ -65,10 +67,12 @@ def analyze_dependencies(html: str) -> DependencyResult:
         else:
             findings.append(
                 SecurityFinding(
+                    code="JS_LIBRARY_DETECTED",
                     category="dependencies",
                     title=f"JS library detected: {lib_name} {version_str}",
                     description=f"{lib_name} version {version_str} was detected in page assets.",
                     severity=Severity.informational,
+                    params={"library": lib_name, "version": version_str},
                     evidence=f"{lib_name}@{version_str}",
                     affected_resource=lib_name,
                     remediation=None,

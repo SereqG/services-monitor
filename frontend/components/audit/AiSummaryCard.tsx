@@ -1,4 +1,7 @@
+"use client";
+
 import type { AiSummary } from "@/lib/types/api";
+import { useI18n } from "@/lib/i18n";
 
 function IssueList({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) return null;
@@ -23,13 +26,14 @@ function IssueList({ title, items }: { title: string; items: string[] }) {
 }
 
 export function AiSummaryCard({ summary }: { summary: AiSummary | null }) {
+  const { dict } = useI18n();
   // AI was not requested for this audit — render nothing.
   if (!summary) return null;
 
   const heading = (
     <div className="flex items-center gap-3">
       <h3 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-        AI summary
+        {dict.aiSummary.heading}
       </h3>
       {summary.model && (
         <span className="font-mono text-[10px] text-muted-foreground/60">
@@ -45,10 +49,10 @@ export function AiSummaryCard({ summary }: { summary: AiSummary | null }) {
         {heading}
         <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5">
           <p className="text-sm text-destructive">
-            {summary.error ?? "The AI summary could not be generated."}
+            {summary.error ?? dict.aiSummary.generationFailed}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Your audit results above are complete and unaffected.
+            {dict.aiSummary.unaffectedNote}
           </p>
         </div>
       </div>
@@ -70,13 +74,13 @@ export function AiSummaryCard({ summary }: { summary: AiSummary | null }) {
 
         {hasStrengthsOrWeaknesses && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <IssueList title="Strengths" items={overview.main_strengths} />
-            <IssueList title="Weaknesses" items={overview.main_weaknesses} />
+            <IssueList title={dict.aiSummary.strengths} items={overview.main_strengths} />
+            <IssueList title={dict.aiSummary.weaknesses} items={overview.main_weaknesses} />
           </div>
         )}
 
         <IssueList
-          title="Priority recommendations"
+          title={dict.aiSummary.priorityRecommendations}
           items={overview.priority_recommendations}
         />
       </div>
@@ -84,7 +88,7 @@ export function AiSummaryCard({ summary }: { summary: AiSummary | null }) {
       {summary.problematic_pages.length > 0 && (
         <div className="space-y-3">
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Pages needing attention
+            {dict.aiSummary.pagesNeedingAttention}
           </div>
           {summary.problematic_pages.map((page) => (
             <div
@@ -98,7 +102,7 @@ export function AiSummaryCard({ summary }: { summary: AiSummary | null }) {
                 {page.summary}
               </p>
               <IssueList
-                title="Recommended actions"
+                title={dict.aiSummary.recommendedActions}
                 items={page.recommended_actions}
               />
             </div>

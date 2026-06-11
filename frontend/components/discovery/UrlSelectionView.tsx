@@ -1,5 +1,8 @@
+"use client";
+
 import type { AuditCheckType, DiscoveryResult } from "@/lib/types/api";
 import { ScopeSelector } from "@/components/discovery/ScopeSelector";
+import { useI18n } from "@/lib/i18n";
 
 export function UrlSelectionView({
   discovery,
@@ -20,6 +23,7 @@ export function UrlSelectionView({
   onAudit: () => void;
   onReset: () => void;
 }) {
+  const { dict } = useI18n();
   const allowed = discovery.discovered_urls.filter((u) => u.status === "allowed");
   const blocked = discovery.discovered_urls.filter((u) => u.status === "blocked_by_robots");
   const failed = discovery.discovered_urls.filter((u) => u.status === "fetch_error");
@@ -31,25 +35,27 @@ export function UrlSelectionView({
     <section className="mt-16 space-y-6">
       <div className="flex flex-col gap-1">
         <div className="font-mono text-xs uppercase tracking-widest text-accent">
-          Discovery complete — {discovery.duration_seconds.toFixed(1)}s
+          {dict.urlSelection.discoveryComplete(discovery.duration_seconds.toFixed(1))}
         </div>
         <h2 className="text-2xl font-bold">
-          Found {discovery.total_discovered} pages on{" "}
-          {new URL(discovery.root_url).hostname}
+          {dict.urlSelection.foundPages(
+            discovery.total_discovered,
+            new URL(discovery.root_url).hostname,
+          )}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {discovery.total_allowed} available for audit
-          {blocked.length > 0 && `, ${blocked.length} blocked by robots.txt`}
-          {failed.length > 0 && `, ${failed.length} failed to fetch`}
+          {dict.urlSelection.availableForAudit(discovery.total_allowed)}
+          {blocked.length > 0 && dict.urlSelection.blockedSuffix(blocked.length)}
+          {failed.length > 0 && dict.urlSelection.failedSuffix(failed.length)}
           {discovery.hit_limit && (
             <span className="ml-2 text-warning">
-              · crawl limit reached — results may be incomplete
+              {dict.urlSelection.crawlLimitReached}
             </span>
           )}
         </p>
         {rootFailed && (
           <p className="mt-1 text-sm text-destructive">
-            The root URL could not be fetched. Check that the site is reachable and try again.
+            {dict.urlSelection.rootFailed}
           </p>
         )}
       </div>
@@ -58,13 +64,13 @@ export function UrlSelectionView({
         <div className="overflow-hidden rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-              Select pages to audit
+              {dict.urlSelection.selectPages}
             </span>
             <button
               onClick={onToggleAll}
               className="font-mono text-[11px] uppercase tracking-widest text-accent transition-colors hover:text-foreground"
             >
-              {allSelected ? "Deselect all" : "Select all"}
+              {allSelected ? dict.urlSelection.deselectAll : dict.urlSelection.selectAll}
             </button>
           </div>
 
@@ -85,7 +91,7 @@ export function UrlSelectionView({
                   {u.url}
                 </label>
                 <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                  depth {u.depth}
+                  {dict.urlSelection.depth(u.depth)}
                 </span>
               </li>
             ))}
@@ -96,7 +102,7 @@ export function UrlSelectionView({
                   {u.url}
                 </span>
                 <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                  robots.txt
+                  {dict.urlSelection.robotsTxt}
                 </span>
               </li>
             ))}
@@ -107,7 +113,7 @@ export function UrlSelectionView({
                   {u.url}
                 </span>
                 <span className="shrink-0 font-mono text-[10px] text-destructive">
-                  fetch error
+                  {dict.urlSelection.fetchError}
                 </span>
               </li>
             ))}
@@ -123,13 +129,13 @@ export function UrlSelectionView({
           disabled={!canRunAudit}
           className="rounded-md bg-primary px-8 py-3 text-sm font-bold uppercase tracking-tight text-primary-foreground transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Run audit ({selectedUrls.size} pages · {selectedChecks.size} checks)
+          {dict.urlSelection.runAudit(selectedUrls.size, selectedChecks.size)}
         </button>
         <button
           onClick={onReset}
           className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
         >
-          ← Start over
+          {dict.urlSelection.startOver}
         </button>
       </div>
     </section>

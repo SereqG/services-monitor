@@ -53,10 +53,12 @@ def _check_mixed_content(html: str, page_url: str) -> list[SecurityFinding]:
 
     return [
         SecurityFinding(
+            code="MIXED_CONTENT",
             category="frontend",
             title="Mixed content detected",
             description=f"Found {len(http_resources)} HTTP resource(s) on an HTTPS page.",
             severity=Severity.medium,
+            params={"count": len(http_resources)},
             evidence="; ".join(http_resources[:3]),
             affected_resource=page_url,
             remediation="Serve all resources over HTTPS to prevent mixed content warnings.",
@@ -71,10 +73,12 @@ def analyze_frontend(html: str, response_headers: httpx.Headers, page_url: str) 
     for tech in technologies:
         findings.append(
             SecurityFinding(
+                code="TECHNOLOGY_DETECTED",
                 category="frontend",
                 title=f"Technology detected: {tech}",
                 description=f"{tech} was identified on the page.",
                 severity=Severity.informational,
+                params={"technology": tech},
                 affected_resource=page_url,
                 remediation=None,
             )

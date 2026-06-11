@@ -11,13 +11,11 @@ export const ALL_AUDIT_CHECKS: AuditCheckType[] = ["health", "seo", "accessibili
 
 export interface AuditInput {
   url: string;
-  email: string;
   report_name?: string | null;
 }
 
 export interface ValidationResult {
   url: string;
-  email: string;
   report_name: string | null;
   is_valid: boolean;
   errors: string[];
@@ -87,6 +85,7 @@ export interface SeoIssue {
   code: string;
   severity: Severity;
   message: string;
+  params?: Record<string, string | number>;
   detail: string | null;
 }
 
@@ -105,6 +104,7 @@ export interface AccessibilityIssue {
   code: string;
   severity: AccessibilitySeverity;
   message: string;
+  params?: Record<string, string | number>;
   element: string | null;
   count: number;
 }
@@ -118,10 +118,12 @@ export interface AccessibilityResult {
 }
 
 export interface SecurityFinding {
+  code: string;
   category: string;
   title: string;
   description: string;
   severity: Severity;
+  params?: Record<string, string | number>;
   evidence: string | null;
   affected_resource: string | null;
   remediation: string | null;
@@ -206,14 +208,12 @@ export interface ScoreBreakdown {
 
 export interface DiscoveryRequest {
   url: string;
-  email: string;
   max_sites?: number | null;
   max_depth?: number | null;
 }
 
 export interface AuditRequest {
   url: string;
-  email: string;
   report_name?: string | null;
   selected_urls?: string[] | null;
   discovery_result?: DiscoveryResult | null;
@@ -221,6 +221,7 @@ export interface AuditRequest {
   max_sites?: number | null;
   max_depth?: number | null;
   enable_ai_summary?: boolean;
+  language?: "en" | "pl";
 }
 
 export interface PageAuditResult {
@@ -250,6 +251,7 @@ export interface AiSummary {
   status: AiSummaryStatus;
   audit_id: string;
   model: string | null;
+  language?: string;
   generated_at: string | null;
   summary: AiSummaryOverview | null;
   problematic_pages: AiPageSummary[];

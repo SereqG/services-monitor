@@ -73,21 +73,21 @@ def collect_issues(meta: MetaData, headings: HeadingStructure) -> list[SeoIssue]
     if not meta.title:
         issues.append(SeoIssue(code="MISSING_TITLE", severity="critical", message="Page title is missing"))
     elif meta.title_length and meta.title_length < _TITLE_MIN:
-        issues.append(SeoIssue(code="TITLE_TOO_SHORT", severity="medium", message=f"Title too short ({meta.title_length} chars, min {_TITLE_MIN})"))
+        issues.append(SeoIssue(code="TITLE_TOO_SHORT", severity="medium", message=f"Title too short ({meta.title_length} chars, min {_TITLE_MIN})", params={"length": meta.title_length, "min": _TITLE_MIN}))
     elif meta.title_length and meta.title_length > _TITLE_MAX:
-        issues.append(SeoIssue(code="TITLE_TOO_LONG", severity="low", message=f"Title too long ({meta.title_length} chars, max {_TITLE_MAX})"))
+        issues.append(SeoIssue(code="TITLE_TOO_LONG", severity="low", message=f"Title too long ({meta.title_length} chars, max {_TITLE_MAX})", params={"length": meta.title_length, "max": _TITLE_MAX}))
 
     if not meta.description:
         issues.append(SeoIssue(code="MISSING_DESCRIPTION", severity="high", message="Meta description is missing"))
     elif meta.description_length and meta.description_length < _DESC_MIN:
-        issues.append(SeoIssue(code="DESC_TOO_SHORT", severity="medium", message=f"Meta description too short ({meta.description_length} chars, min {_DESC_MIN})"))
+        issues.append(SeoIssue(code="DESC_TOO_SHORT", severity="medium", message=f"Meta description too short ({meta.description_length} chars, min {_DESC_MIN})", params={"length": meta.description_length, "min": _DESC_MIN}))
     elif meta.description_length and meta.description_length > _DESC_MAX:
-        issues.append(SeoIssue(code="DESC_TOO_LONG", severity="low", message=f"Meta description too long ({meta.description_length} chars, max {_DESC_MAX})"))
+        issues.append(SeoIssue(code="DESC_TOO_LONG", severity="low", message=f"Meta description too long ({meta.description_length} chars, max {_DESC_MAX})", params={"length": meta.description_length, "max": _DESC_MAX}))
 
     if headings.h1_count == 0:
         issues.append(SeoIssue(code="MISSING_H1", severity="high", message="No H1 heading found"))
     elif headings.h1_count > 1:
-        issues.append(SeoIssue(code="MULTIPLE_H1", severity="medium", message=f"Multiple H1 headings found ({headings.h1_count})"))
+        issues.append(SeoIssue(code="MULTIPLE_H1", severity="medium", message=f"Multiple H1 headings found ({headings.h1_count})", params={"count": headings.h1_count}))
 
     if not meta.canonical:
         issues.append(SeoIssue(code="MISSING_CANONICAL", severity="medium", message="Canonical tag is missing"))
@@ -123,6 +123,7 @@ async def analyze_seo(client: httpx.AsyncClient, url: str) -> SeoAnalysisResult:
             code="IMAGES_MISSING_ALT",
             severity="medium",
             message=f"{images_without_alt} image(s) missing alt attribute",
+            params={"count": images_without_alt},
         ))
 
     has_schema = bool(soup.find("script", type="application/ld+json"))

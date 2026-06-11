@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface DiscoveryLogProps {
   messages: string[];
@@ -9,6 +10,7 @@ interface DiscoveryLogProps {
 }
 
 export function DiscoveryLog({ messages, elapsedSeconds, maxDurationSeconds }: DiscoveryLogProps) {
+  const { dict } = useI18n();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export function DiscoveryLog({ messages, elapsedSeconds, maxDurationSeconds }: D
         </div>
         {elapsedSeconds != null && maxDurationSeconds != null && (
           <span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
-            {formatTime(elapsedSeconds)}&nbsp;/&nbsp;{formatTime(maxDurationSeconds)}&nbsp;max
+            {formatTime(elapsedSeconds)}&nbsp;/&nbsp;{formatTime(maxDurationSeconds)}&nbsp;{dict.progress.maxSuffix}
           </span>
         )}
       </div>

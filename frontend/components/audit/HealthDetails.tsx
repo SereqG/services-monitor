@@ -1,5 +1,7 @@
+"use client";
+
 import type { HealthCheckResult } from "@/lib/types/api";
-import { ttfbStatus, statusColor } from "@/lib/utils/scoring";
+import { useI18n } from "@/lib/i18n";
 
 function Row({ label, value, note, pass }: { label: string; value: string; note?: string; pass?: boolean }) {
   return (
@@ -21,73 +23,68 @@ function Row({ label, value, note, pass }: { label: string; value: string; note?
 }
 
 export function HealthDetails({ health }: { health: HealthCheckResult }) {
+  const { dict } = useI18n();
+  const h = dict.healthDetails;
   const ttfbMs = health.ttfb_ms;
   const ttfbLabel =
     ttfbMs === null
-      ? "N/A"
+      ? dict.common.na
       : ttfbMs < 200
-      ? `${ttfbMs.toFixed(0)}ms (excellent)`
+      ? `${ttfbMs.toFixed(0)}ms (${h.ttfbQuality.excellent})`
       : ttfbMs < 800
-      ? `${ttfbMs.toFixed(0)}ms (good)`
-      : `${ttfbMs.toFixed(0)}ms (slow)`;
+      ? `${ttfbMs.toFixed(0)}ms (${h.ttfbQuality.good})`
+      : `${ttfbMs.toFixed(0)}ms (${h.ttfbQuality.slow})`;
 
-  const statusLabel: Record<string, string> = {
-    ok: "OK",
-    redirect: "Redirect",
-    client_error: "Client error",
-    server_error: "Server error",
-    timeout: "Timeout",
-    connection_error: "Connection error",
-  };
+  const statusText = h.statusLabels[health.status] ?? health.status;
 
   return (
     <div>
       <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-        Health check
+        {h.title}
       </h3>
       <div className="overflow-hidden rounded-xl border border-border bg-card/50 px-4">
         <Row
-          label="Availability"
-          note="Site responds with HTTP 2xx or 3xx"
-          value={health.is_available ? "Available" : "Unavailable"}
+          label={h.rows.availability.label}
+          note={h.rows.availability.note}
+          value={health.is_available ? dict.common.available : dict.common.unavailable}
           pass={health.is_available}
         />
         <Row
-          label="HTTP status"
-          note="Final response code after following redirects"
-          value={health.status_code !== null ? `${health.status_code} ${statusLabel[health.status] ?? health.status}` : statusLabel[health.status] ?? health.status}
+          label={h.rows.status.label}
+          note={h.rows.status.note}
+          value={health.status_code !== null ? `${health.status_code} ${statusText}` : statusText}
           pass={health.is_available}
         />
         <Row
-          label="Time to First Byte"
-          note="How fast the server sent the first response byte. < 200ms excellent, < 800ms good, > 800ms slow."
+          label={h.rows.ttfb.label}
+          note={h.rows.ttfb.note}
           value={ttfbLabel}
           pass={ttfbMs !== null && ttfbMs < 800}
         />
         <Row
-          label="Final URL"
-          note="Destination URL after all redirects"
+          label={h.rows.finalUrl.label}
+          note={h.rows.finalUrl.note}
           value={health.final_url}
         />
         <Row
-          label="Redirects"
-          note="Number of HTTP 3xx hops before reaching the final URL. Chains longer than 3 hops add latency."
+          label={h.rows.redirects.label}
+          note={h.rows.redirects.note}
           value={String(health.redirect_chain.length)}
           pass={!health.has_redirect_loop}
         />
         {health.has_redirect_loop && (
           <div className="py-3 font-mono text-xs text-destructive">
-            Redirect loop detected — the chain visits the same URL more than once.
+            {h.redirectLoopDetected}
           </div>
         )}
         {health.error && (
-          <div className="py-3 font-mono text-xs text-destructive">Error: {health.error}</div>
+          <div className="py-3 font-mono text-xs text-destructive">{h.errorPrefix}: {health.error}</div>
         )}
       </div>
       {health.redirect_chain.length > 0 && (
         <div className="mt-3 overflow-hidden rounded-xl border border-border bg-card/30 px-4 py-3">
           <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Redirect chain
+            {h.redirectChain}
           </div>
           {health.redirect_chain.map((hop, i) => (
             <div key={i} className="truncate font-mono text-xs text-muted-foreground">

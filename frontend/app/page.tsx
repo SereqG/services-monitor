@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuditFlow } from "@/hooks/useAuditFlow";
+import { useI18n } from "@/lib/i18n";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { IdlePlaceholder } from "@/components/ui/IdlePlaceholder";
@@ -31,6 +32,7 @@ export default function Home() {
     toggleAllUrls,
     toggleCheck,
   } = useAuditFlow();
+  const { dict } = useI18n();
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-accent/30 selection:text-accent">
@@ -41,16 +43,14 @@ export default function Home() {
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3 py-1">
             <span className="size-1.5 animate-pulse rounded-full bg-accent" />
             <span className="font-mono text-[10px] uppercase tracking-widest text-accent">
-              Engine online
+              {dict.home.engineOnline}
             </span>
           </div>
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-            Analyze web performance in real time.
+            {dict.home.heroTitle}
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-            Paste a URL and we&apos;ll crawl the site, then run a full audit covering SEO,
-            accessibility, and health — then translate the numbers into plain language so you know
-            what to fix first.
+            {dict.home.heroSubtitle}
           </p>
 
           {(appState === "idle" || appState === "error") && (
@@ -87,7 +87,7 @@ export default function Home() {
         )}
         {appState === "done" && report && <ReportView report={report} />}
         {appState === "error" && (
-          <ErrorView message={errorMsg ?? "An unexpected error occurred."} onReset={handleReset} />
+          <ErrorView message={errorMsg ?? dict.common.unexpectedError} onReset={handleReset} />
         )}
       </main>
 

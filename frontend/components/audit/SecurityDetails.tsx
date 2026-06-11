@@ -1,3 +1,5 @@
+"use client";
+
 import type {
   SecurityAuditResult,
   SecurityFinding,
@@ -11,6 +13,7 @@ import type {
   BestPracticesResult,
 } from "@/lib/types/api";
 import { scoreStatus, statusColor, statusBar, issueSeverityColor } from "@/lib/utils/scoring";
+import { useI18n, localizeFinding } from "@/lib/i18n";
 
 const SECURITY_HEADERS = [
   "Strict-Transport-Security",
@@ -69,24 +72,26 @@ function CheckRow({
 }
 
 function FindingRow({ finding }: { finding: SecurityFinding }) {
+  const { lang, dict } = useI18n();
+  const text = localizeFinding(finding, lang);
   return (
     <div className="rounded-lg border border-border bg-card/50 p-3">
       <div className="flex items-start gap-2">
         <span
           className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[9px] uppercase ${issueSeverityColor(finding.severity as Severity)}`}
         >
-          {finding.severity}
+          {dict.severity[finding.severity] ?? finding.severity}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">{finding.title}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{finding.description}</p>
+          <p className="text-sm font-medium">{text.title}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{text.description}</p>
           {finding.evidence && (
             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-              Evidence: {finding.evidence}
+              {dict.securityDetails.evidence}: {finding.evidence}
             </p>
           )}
-          {finding.remediation && (
-            <p className="mt-1 text-xs text-accent/80">{finding.remediation}</p>
+          {text.remediation && (
+            <p className="mt-1 text-xs text-accent/80">{text.remediation}</p>
           )}
         </div>
       </div>
@@ -106,9 +111,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function HeadersSection({ headers }: { headers: HeadersResult }) {
+  const { dict } = useI18n();
   const presentSet = new Set(headers.headers_present);
   return (
-    <Section title="HTTP security headers">
+    <Section title={dict.securityDetails.sections.headers}>
       <div className="overflow-hidden rounded-xl border border-border bg-card/50 px-4">
         {SECURITY_HEADERS.map((name) => (
           <CheckRow key={name} label={name} pass={presentSet.has(name)} />
@@ -126,27 +132,35 @@ function HeadersSection({ headers }: { headers: HeadersResult }) {
 }
 
 function TlsSection({ tls }: { tls: TlsResult }) {
+  const { dict } = useI18n();
+  const t = dict.securityDetails;
   const certExpiry = tls.certificate_expiry_days;
+  const certValidValue =
+    tls.certificate_valid === null
+      ? dict.common.unknown
+      : tls.certificate_valid
+      ? dict.common.valid
+      : dict.common.invalid;
   return (
-    <Section title="TLS / HTTPS">
+    <Section title={t.sections.tls}>
       <div className="overflow-hidden rounded-xl border border-border bg-card/50 px-4">
         <CheckRow
-          label="TLS version"
-          note="TLS 1.2 or higher is required; TLS 1.3 is preferred."
+          label={t.rows.tlsVersion.label}
+          note={t.rows.tlsVersion.note}
           pass={tls.tls_version !== null && (tls.tls_version === "TLSv1.2" || tls.tls_version === "TLSv1.3")}
-          value={tls.tls_version ?? "Unknown"}
+          value={tls.tls_version ?? dict.common.unknown}
         />
         <CheckRow
-          label="Certificate valid"
-          note="Certificate must be issued by a trusted CA and not expired."
+          label={t.rows.certValid.label}
+          note={t.rows.certValid.note}
           pass={tls.certificate_valid === true}
-          value={tls.certificate_valid === null ? "Unknown" : tls.certificate_valid ? "Valid" : "Invalid"}
+          value={certValidValue}
         />
         <CheckRow
-          label="Certificate expiry"
-          note="Certificates expiring in less than 30 days should be renewed."
+          label={t.rows.certExpiry.label}
+          note={t.rows.certExpiry.note}
           pass={certExpiry !== null && certExpiry > 30}
-          value={certExpiry !== null ? `${certExpiry} days` : "Unknown"}
+          value={certExpiry !== null ? t.daysValue(certExpiry) : dict.common.unknown}
         />
       </div>
       {tls.findings.length > 0 && (
@@ -161,11 +175,12 @@ function TlsSection({ tls }: { tls: TlsResult }) {
 }
 
 function CookiesSection({ cookies }: { cookies: CookieResult }) {
+  const { dict } = useI18n();
   return (
-    <Section title="Cookies">
+    <Section title={dict.securityDetails.sections.cookies}>
       <div className="overflow-hidden rounded-xl border border-border bg-card/50 px-4">
         <CheckRow
-          label="Total cookies"
+          label={dict.securityDetails.rows.totalCookies.label}
           pass={cookies.total_cookies === 0 || cookies.findings.length === 0}
           value={String(cookies.total_cookies)}
         />
@@ -182,32 +197,34 @@ function CookiesSection({ cookies }: { cookies: CookieResult }) {
 }
 
 function DnsSection({ dns }: { dns: DnsResult }) {
+  const { dict } = useI18n();
+  const t = dict.securityDetails;
   return (
-    <Section title="DNS security">
+    <Section title={t.sections.dns}>
       <div className="overflow-hidden rounded-xl border border-border bg-card/50 px-4">
         <CheckRow
-          label="SPF record"
-          note="Sender Policy Framework — prevents email spoofing."
+          label={t.rows.spf.label}
+          note={t.rows.spf.note}
           pass={dns.spf_present}
-          value={dns.spf_present ? "Present" : "Missing"}
+          value={dns.spf_present ? dict.common.present : dict.common.missing}
         />
         <CheckRow
-          label="DMARC record"
-          note="Domain-based Message Authentication — defines policy for failed SPF/DKIM."
+          label={t.rows.dmarc.label}
+          note={t.rows.dmarc.note}
           pass={dns.dmarc_present}
-          value={dns.dmarc_present ? "Present" : "Missing"}
+          value={dns.dmarc_present ? dict.common.present : dict.common.missing}
         />
         <CheckRow
-          label="DNSSEC"
-          note="DNS Security Extensions — protects against DNS spoofing."
+          label={t.rows.dnssec.label}
+          note={t.rows.dnssec.note}
           pass={dns.dnssec_enabled}
-          value={dns.dnssec_enabled ? "Enabled" : "Disabled"}
+          value={dns.dnssec_enabled ? dict.common.enabled : dict.common.disabled}
         />
         <CheckRow
-          label="CAA record"
-          note="Certification Authority Authorization — restricts which CAs can issue certificates."
+          label={t.rows.caa.label}
+          note={t.rows.caa.note}
           pass={dns.caa_present}
-          value={dns.caa_present ? "Present" : "Missing"}
+          value={dns.caa_present ? dict.common.present : dict.common.missing}
         />
       </div>
       {dns.findings.length > 0 && (
@@ -222,12 +239,13 @@ function DnsSection({ dns }: { dns: DnsResult }) {
 }
 
 function FrontendSection({ frontend }: { frontend: FrontendSecurityResult }) {
+  const { dict } = useI18n();
   return (
-    <Section title="Frontend security">
+    <Section title={dict.securityDetails.sections.frontend}>
       {frontend.technologies_detected.length > 0 && (
         <div className="mb-3 overflow-hidden rounded-xl border border-border bg-card/50 px-4 py-3">
           <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Technologies detected
+            {dict.securityDetails.technologiesDetected}
           </div>
           <div className="flex flex-wrap gap-2">
             {frontend.technologies_detected.map((tech) => (
@@ -249,7 +267,7 @@ function FrontendSection({ frontend }: { frontend: FrontendSecurityResult }) {
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card/50 px-4 py-3 font-mono text-xs text-accent">
-          ✓ No frontend security issues found
+          {dict.securityDetails.noFrontendIssues}
         </div>
       )}
     </Section>
@@ -257,12 +275,13 @@ function FrontendSection({ frontend }: { frontend: FrontendSecurityResult }) {
 }
 
 function DependenciesSection({ dependencies }: { dependencies: DependencyResult }) {
+  const { dict } = useI18n();
   return (
-    <Section title="JavaScript dependencies">
+    <Section title={dict.securityDetails.sections.dependencies}>
       {dependencies.js_libraries.length > 0 && (
         <div className="mb-3 overflow-hidden rounded-xl border border-border bg-card/50 px-4 py-3">
           <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Libraries detected
+            {dict.securityDetails.librariesDetected}
           </div>
           <div className="flex flex-wrap gap-2">
             {dependencies.js_libraries.map((lib) => (
@@ -284,7 +303,7 @@ function DependenciesSection({ dependencies }: { dependencies: DependencyResult 
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card/50 px-4 py-3 font-mono text-xs text-accent">
-          ✓ No dependency issues found
+          {dict.securityDetails.noDependencyIssues}
         </div>
       )}
     </Section>
@@ -292,26 +311,28 @@ function DependenciesSection({ dependencies }: { dependencies: DependencyResult 
 }
 
 function BestPracticesSection({ bp }: { bp: BestPracticesResult }) {
+  const { dict } = useI18n();
+  const t = dict.securityDetails;
   return (
-    <Section title="Best practices">
+    <Section title={t.sections.bestPractices}>
       <div className="overflow-hidden rounded-xl border border-border bg-card/50 px-4">
         <CheckRow
-          label="security.txt"
-          note="A machine-readable file for security researchers to report vulnerabilities."
+          label={t.rows.securityTxt.label}
+          note={t.rows.securityTxt.note}
           pass={bp.security_txt_present}
-          value={bp.security_txt_present ? "Present" : "Missing"}
+          value={bp.security_txt_present ? dict.common.present : dict.common.missing}
         />
         <CheckRow
-          label="robots.txt"
-          note="Tells crawlers which paths to avoid. Reduces accidental exposure."
+          label={t.rows.robotsTxt.label}
+          note={t.rows.robotsTxt.note}
           pass={bp.robots_txt_present}
-          value={bp.robots_txt_present ? "Present" : "Missing"}
+          value={bp.robots_txt_present ? dict.common.present : dict.common.missing}
         />
         <CheckRow
-          label="Source maps exposed"
-          note="Public source maps expose original source code to anyone who looks."
+          label={t.rows.sourceMaps.label}
+          note={t.rows.sourceMaps.note}
           pass={bp.sourcemaps_found.length === 0}
-          value={bp.sourcemaps_found.length === 0 ? "None found" : `${bp.sourcemaps_found.length} found`}
+          value={bp.sourcemaps_found.length === 0 ? dict.common.noneFound : t.foundValue(bp.sourcemaps_found.length)}
         />
       </div>
       {bp.findings.length > 0 && (
@@ -325,17 +346,9 @@ function BestPracticesSection({ bp }: { bp: BestPracticesResult }) {
   );
 }
 
-const SUBCATEGORY_LABELS: Record<string, string> = {
-  headers: "Headers",
-  tls: "TLS",
-  cookies: "Cookies",
-  dns: "DNS",
-  frontend: "Frontend",
-  dependencies: "Dependencies",
-  best_practices: "Best Practices",
-};
-
 export function SecurityDetails({ security }: { security: SecurityAuditResult }) {
+  const { dict } = useI18n();
+  const t = dict.securityDetails;
   const subScores = {
     headers: security.headers.score,
     tls: security.tls.score,
@@ -355,11 +368,11 @@ export function SecurityDetails({ security }: { security: SecurityAuditResult })
       {/* Subcategory score grid */}
       <div>
         <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          Security subcategory scores
+          {t.subScores}
         </h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {Object.entries(subScores).map(([key, score]) => (
-            <SubScore key={key} label={SUBCATEGORY_LABELS[key]} score={score} />
+            <SubScore key={key} label={t.subcategories[key] ?? key} score={score} />
           ))}
         </div>
       </div>
@@ -368,7 +381,7 @@ export function SecurityDetails({ security }: { security: SecurityAuditResult })
       {criticalAndHighFindings.length > 0 && (
         <div>
           <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            Critical &amp; high findings ({criticalAndHighFindings.length})
+            {t.criticalHigh(criticalAndHighFindings.length)}
           </h3>
           <div className="space-y-2">
             {criticalAndHighFindings.map((f, i) => (
