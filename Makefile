@@ -2,7 +2,7 @@ API_DIR   := apps/api
 FRONT_DIR := frontend
 VENV      := $(API_DIR)/.venv/bin
 
-.PHONY: dev api frontend install install-api install-frontend
+.PHONY: dev api frontend install install-api install-frontend venv
 
 dev: ## Start backend and frontend concurrently
 	@trap 'kill 0' INT; \
@@ -13,6 +13,9 @@ api: ## Start backend (FastAPI)
 
 frontend: ## Start frontend (Next.js)
 	cd $(FRONT_DIR) && npm run dev
+
+venv: ## Create Python virtual environment in apps/api/.venv
+	python3 -m venv $(API_DIR)/.venv
 
 install: install-api install-frontend ## Install all dependencies
 
