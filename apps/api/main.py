@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
@@ -11,6 +11,12 @@ from slices.health_check.router import router as health_check_router
 from slices.input_validation.router import router as input_validation_router
 from slices.reporting.router import router as reporting_router
 from slices.seo.router import router as seo_router
+
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+}
 
 
 def create_app() -> FastAPI:
@@ -23,12 +29,25 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=settings.cors_origins_list,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+        allow_credentials=False,
     )
 
+    @app.middleware("http")
+    async def add_security_headers(request: Request, call_next) -> Response:
+        response = await call_next(request)
+        for header, value in _SECURITY_HEADERS.items():
+            response.headers.setdefault(header, value)
+        return response
+
     app.add_exception_handler(ServiceMonitorError, service_monitor_exception_handler)
+
+    @app.get("/healthz", tags=["health"])
+    async def healthz() -> dict[str, str]:
+        """Liveness probe for container orchestration (not a target audit)."""
+        return {"status": "ok"}
 
     app.include_router(input_validation_router, prefix="/api/v1")
     app.include_router(discovery_router, prefix="/api/v1")

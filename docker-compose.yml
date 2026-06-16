@@ -3,14 +3,27 @@ services:
     build: ./apps/api
     container_name: services-monitor-api
     restart: unless-stopped
+    # Copy apps/api/.env.example to apps/api/.env and fill it in before running.
+    # Optional: in orchestrated deployments, inject config via the environment instead.
+    env_file:
+      - path: ./apps/api/.env
+        required: false
     ports:
       - "8000:8000"
+    # Liveness is defined in the image (HEALTHCHECK on /healthz); the frontend
+    # waits for it via depends_on below.
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # NEXT_PUBLIC_* is inlined at build time — it MUST be set here, not as a
+        # runtime env. Point it at the API origin reachable from the browser.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     container_name: services-monitor-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: https://monitor.example.com
+    depends_on:
+      api:
+        condition: service_healthy

@@ -42,6 +42,19 @@ def test_rejects_internal_range():
         validate_url("https://10.0.0.1")
 
 
+def test_rejects_cloud_metadata_ip():
+    # 169.254.169.254 is the cloud metadata endpoint — link-local, must be blocked.
+    with pytest.raises(SSRFAttemptError) as exc:
+        validate_url("https://169.254.169.254")
+    assert exc.value.code == "SSRF_PRIVATE_IP"
+
+
+def test_rejects_cgnat_ip():
+    with pytest.raises(SSRFAttemptError) as exc:
+        validate_url("https://100.64.0.1")
+    assert exc.value.code == "SSRF_PRIVATE_IP"
+
+
 def test_rejects_url_too_long():
     long_url = "https://" + "a" * 200 + ".com"
     with pytest.raises(InputValidationError) as exc:

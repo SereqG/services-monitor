@@ -4,7 +4,8 @@ import logging
 import sys
 from pathlib import Path
 
-_LOG_FILE = Path(__file__).parent.parent / "log.log"
+from core.config import settings
+
 _FMT = "%(asctime)s | %(levelname)s | %(message)s"
 _DATEFMT = "%Y-%m-%dT%H:%M:%S"
 
@@ -14,20 +15,22 @@ def _build_logger() -> logging.Logger:
     if logger.handlers:
         return logger
 
-    if not _LOG_FILE.exists():
-        _LOG_FILE.touch()
-
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG if settings.debug else logging.INFO)
     formatter = logging.Formatter(_FMT, datefmt=_DATEFMT)
 
-    file_handler = logging.FileHandler(_LOG_FILE)
-    file_handler.setFormatter(formatter)
-
+    # stdout is always available so container runtimes can collect logs.
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
-
-    logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+
+    # A file handler is opt-in via LOG_DIR and never written inside the source tree.
+    if settings.log_dir:
+        log_dir = Path(settings.log_dir)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(log_dir / "services_monitor.log")
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
     return logger
 
 
