@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, field_validator
 
 from core.config import settings
+from slices.ai_summary.providers import LLMProvider
 from slices.discovery.schemas import DiscoveryResult
 from slices.reporting.schemas import AuditReport
 
@@ -27,6 +28,10 @@ class AuditRequest(BaseModel):
     max_sites: int | None = None
     max_depth: int | None = None
     enable_ai_summary: bool = False
+    # Which provider to use for the AI summary. The matching API key is supplied
+    # out-of-band via the X-LLM-Api-Key header, never in this body, so the secret
+    # is not serialized into logs or the persisted report.
+    llm_provider: LLMProvider | None = None
     language: SummaryLanguage = "en"
 
     @field_validator("max_sites")

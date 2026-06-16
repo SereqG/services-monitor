@@ -10,6 +10,7 @@ import httpx
 from core.config import settings
 from core.logging import logger
 from slices.accessibility.service import analyze_accessibility
+from slices.ai_summary.providers import LLMCredentials
 from slices.ai_summary.schemas import AiSummary, AiSummaryStatus
 from slices.ai_summary.service import safe_generate_ai_summary
 from slices.audit.schemas import ALL_CHECKS, AuditEvent, AuditEventType, AuditRequest
@@ -85,28 +86,40 @@ async def _generate_ai_summary(
     client: httpx.AsyncClient,
     report: AuditReport,
     audit_id: str,
+    credentials: LLMCredentials | None,
     language: str = "en",
 ) -> AiSummary:
-    """Run the optional AI explanation layer, respecting server configuration.
+    """Run the optional AI explanation layer using the user's own API key.
 
-    AI is non-critical: a missing API key or disabled feature yields an explicit
-    error summary rather than failing the audit.
+    AI is non-critical: a missing key or a server-disabled feature yields an
+    explicit error summary rather than failing the audit.
     """
-    if settings.ai_summary_enabled and settings.openrouter_api_key:
-        return await safe_generate_ai_summary(client, report, audit_id, language)
+    if settings.ai_summary_enabled and credentials is not None:
+        return await safe_generate_ai_summary(
+            client, report, audit_id, credentials, language
+        )
+    if not settings.ai_summary_enabled:
+        reason, error = "disabled", "AI summary is disabled on this server."
+    else:
+        reason, error = "no_api_key", "AI summary requires your own API key."
     logger.info(
-        "function=_generate_ai_summary | audit_id=%s status=error reason=not_configured",
+        "function=_generate_ai_summary | audit_id=%s status=error reason=%s",
         audit_id,
+        reason,
     )
     return AiSummary(
         status=AiSummaryStatus.error,
         audit_id=audit_id,
         language=language,
-        error="AI summary is not configured on this server.",
+        error=error,
     )
 
 
-async def run_audit(client: httpx.AsyncClient, request: AuditRequest) -> AuditReport:
+async def run_audit(
+    client: httpx.AsyncClient,
+    request: AuditRequest,
+    credentials: LLMCredentials | None = None,
+) -> AuditReport:
     """Orchestrates the full audit workflow across all slices."""
     logger.info(
         "function=run_audit | url=%s report_name=%s scope=%s ai_summary=%s",
@@ -268,7 +281,7 @@ async def run_audit(client: httpx.AsyncClient, request: AuditRequest) -> AuditRe
 
     if request.enable_ai_summary:
         report.ai_summary = await _generate_ai_summary(
-            client, report, audit_id, request.language
+            client, report, audit_id, credentials, request.language
         )
 
     save_summary(report)
@@ -280,7 +293,9 @@ def _elapsed(start: float) -> float:
 
 
 async def stream_audit(
-    client: httpx.AsyncClient, request: AuditRequest
+    client: httpx.AsyncClient,
+    request: AuditRequest,
+    credentials: LLMCredentials | None = None,
 ) -> AsyncGenerator[AuditEvent, None]:
     """Runs the full audit workflow and yields AuditEvent progress events."""
     logger.info("function=stream_audit | url=%s scope=%s", request.url, request.scope)
@@ -499,7 +514,7 @@ async def stream_audit(
             elapsed_seconds=_elapsed(start),
         )
         report.ai_summary = await _generate_ai_summary(
-            client, report, audit_id, request.language
+            client, report, audit_id, credentials, request.language
         )
         if report.ai_summary.status == AiSummaryStatus.ok:
             yield AuditEvent(

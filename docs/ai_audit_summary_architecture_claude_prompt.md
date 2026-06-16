@@ -515,17 +515,22 @@ Implemented under `apps/api/slices/ai_summary/`:
 ```
 slices/ai_summary/
 ├── schemas.py          AiAnalysisDataset, AiSummary + nested models
+├── providers.py        LLMProvider, ProviderConfig registry, LLMCredentials
 ├── preprocessing.py    AuditReport → AiAnalysisDataset (deterministic)
 ├── storage.py          write/read storage/ai_context/{audit_id}.json
 ├── retrieval_tool.py   audit_context_tool (general_info / per_page_info)
 ├── prompt_builder.py   system prompt + phase-1/phase-2 messages
-├── llm_client.py       raw-httpx OpenRouter chat-completions + tool loop
+├── _common.py          ToolHandler, JSON parsing, HTTP error mapping
+├── _openai_compat.py   OpenAI Chat Completions adapter (OpenAI/OpenRouter/Gemini)
+├── _anthropic.py       Anthropic Messages adapter
+├── llm_client.py       dispatcher: run_completion / validate_credentials by provider
 ├── transformers.py     LLM JSON → validated AiSummary
-└── service.py          generate_ai_summary + safe_generate_ai_summary
+├── service.py          generate_ai_summary + safe_generate_ai_summary
+└── router.py           POST /api/v1/ai/validate-key
 ```
 
-There is no `router.py` — the feature is inline in the audit flow, not a standalone
-endpoint.
+The summary itself runs inline in the audit flow. `router.py` exposes only the
+key-validation endpoint used by the frontend setup modal.
 
 ## Trigger and integration
 
@@ -544,28 +549,56 @@ not the application database.
 
 ## Retrieval tool
 
-`audit_context_tool` is exposed to the LLM as an OpenRouter function tool with modes
+`audit_context_tool` is exposed to the LLM as an OpenAI-compatible function tool with modes
 `general_info` and `per_page_info`. `audit_id` is **not** a tool parameter — it is bound
 server-side per audit so the model cannot point the tool at a different dataset. The tool
 never raises: failures are returned as `{"error": ...}` so the model can recover.
 
+## Providers and user-supplied keys
+
+The LLM API key and provider are supplied by the **user**, not the server. There is no
+server-side LLM key. The user stores a key for one provider in their browser
+(`localStorage`); it is sent per request via the `X-LLM-Api-Key` header (never the request
+body), and the provider is sent as `AuditRequest.llm_provider`. `core/audit/router.py`
+combines the two into an `LLMCredentials` only when AI is enabled, so the secret is never
+logged or persisted on the report.
+
+The model is **fixed per provider** (registry in `providers.py`) so the model and price
+shown in the UI always match what the backend calls:
+
+| Provider | Model | Wire dialect |
+|---|---|---|
+| `openai` | `gpt-5.4-mini` | OpenAI Chat Completions |
+| `gemini` | `gemini-2.5-flash` | OpenAI-compatible endpoint |
+| `anthropic` | `claude-haiku-4-5` | Anthropic Messages |
+| `openrouter` | `google/gemini-2.5-flash` | OpenAI Chat Completions |
+
+Two adapters cover all four: `_openai_compat.py` (OpenAI/OpenRouter/Gemini) and
+`_anthropic.py`. The slice builds messages/tools in the canonical OpenAI shape; the
+Anthropic adapter translates internally (system field, `tool_use`/`tool_result` blocks).
+
 ## LLM calls
 
-- Provider: OpenRouter, called with raw `httpx` (no SDK dependency added).
-- Model: `google/gemini-2.5-flash` (configurable via `AI_SUMMARY_MODEL`).
+- Called with raw `httpx` (no provider SDK dependency added).
 - Two completions: (1) overall summary from `general_info`, (2) weak-page analysis from
   `per_page_info`. Each runs a bounded tool-call loop.
 - One retry per completion on transient failures (network error, HTTP 429/5xx). Auth
-  (401/403) and other 4xx errors are terminal.
+  (401/403, code `AI_AUTH_FAILED`) and other 4xx errors are terminal.
+
+## Key validation
+
+`POST /api/v1/ai/validate-key` (`router.py`) takes `{provider}` + the `X-LLM-Api-Key`
+header and makes a tiny live call through the same adapter, returning `{ok, model, error?}`.
+The frontend setup modal calls this before saving a key so the user gets immediate feedback.
 
 ## Configuration
 
 `apps/api/core/config.py` / `.env`:
 
-- `OPENROUTER_API_KEY` — required for AI; absent ⇒ AI is reported as not configured.
-- `AI_SUMMARY_ENABLED` — server-wide kill switch (default `true`).
-- `AI_SUMMARY_MODEL`, `AI_SUMMARY_TIMEOUT_SECONDS`, `AI_SUMMARY_MAX_TOKENS`,
-  `AI_SUMMARY_MAX_TOOL_ITERATIONS`, `AI_STORAGE_DIR`.
+- `AI_SUMMARY_ENABLED` — server-wide kill switch (default `true`). With AI disabled, the
+  summary is reported as `status="error"` even when the user supplies a key.
+- `AI_SUMMARY_TIMEOUT_SECONDS`, `AI_SUMMARY_MAX_TOKENS`, `AI_SUMMARY_MAX_TOOL_ITERATIONS`,
+  `AI_STORAGE_DIR`. There is **no** server-side LLM API key or model setting.
 
 ## Failure contract
 

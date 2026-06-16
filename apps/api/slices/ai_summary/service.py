@@ -10,6 +10,7 @@ from slices.ai_summary import storage
 from slices.ai_summary.llm_client import ToolHandler, run_completion
 from slices.ai_summary.preprocessing import build_ai_dataset
 from slices.ai_summary.prompt_builder import build_phase1_messages, build_phase2_messages
+from slices.ai_summary.providers import LLMCredentials
 from slices.ai_summary.retrieval_tool import TOOL_NAME, TOOL_SPEC, run_audit_context_tool
 from slices.ai_summary.schemas import AiSummary
 from slices.ai_summary.transformers import (
@@ -42,19 +43,24 @@ async def generate_ai_summary(
     http_client: httpx.AsyncClient,
     report: AuditReport,
     audit_id: str,
+    credentials: LLMCredentials,
     language: str = "en",
 ) -> AiSummary:
     """Build the curated dataset, store it, and run the two-phase LLM summary.
 
+    `credentials` selects the provider/model and supplies the user's API key.
     `language` ("en"|"pl") controls the prose language only — the curated dataset
     and finding codes stay language-neutral. Raises AiSummaryError on failure —
     call sites should use safe_generate_ai_summary so AI problems never break the
     audit.
     """
+    model = credentials.config.model
     logger.info(
-        "function=generate_ai_summary | audit_id=%s root_url=%s language=%s",
+        "function=generate_ai_summary | audit_id=%s root_url=%s provider=%s model=%s language=%s",
         audit_id,
         report.root_url,
+        credentials.provider,
+        model,
         language,
     )
 
@@ -66,7 +72,11 @@ async def generate_ai_summary(
 
     # Completion 1 — overall website summary.
     overview_payload = await run_completion(
-        http_client, build_phase1_messages(language), tools, tool_handler
+        http_client,
+        build_phase1_messages(language),
+        tools,
+        tool_handler,
+        credentials=credentials,
     )
     overview = parse_overview(overview_payload)
 
@@ -78,6 +88,7 @@ async def generate_ai_summary(
             build_phase2_messages(problematic_urls, language),
             tools,
             tool_handler,
+            credentials=credentials,
         )
         pages = parse_problematic_pages(pages_payload)
     else:
@@ -88,13 +99,14 @@ async def generate_ai_summary(
         audit_id,
         len(pages),
     )
-    return build_success_summary(audit_id, overview, pages, language)
+    return build_success_summary(audit_id, overview, pages, language, model=model)
 
 
 async def safe_generate_ai_summary(
     http_client: httpx.AsyncClient,
     report: AuditReport,
     audit_id: str,
+    credentials: LLMCredentials,
     language: str = "en",
 ) -> AiSummary:
     """Non-critical wrapper — AI failures never break the audit.
@@ -102,8 +114,11 @@ async def safe_generate_ai_summary(
     Returns an AiSummary with status=error (and an explicit message) on any
     failure instead of raising.
     """
+    model = credentials.config.model
     try:
-        return await generate_ai_summary(http_client, report, audit_id, language)
+        return await generate_ai_summary(
+            http_client, report, audit_id, credentials, language
+        )
     except AiSummaryError as exc:
         logger.warning(
             "function=safe_generate_ai_summary | audit_id=%s status=error code=%s message=%s",
@@ -111,12 +126,12 @@ async def safe_generate_ai_summary(
             exc.code,
             exc.message,
         )
-        return build_error_summary(audit_id, exc.message, language)
+        return build_error_summary(audit_id, exc.message, language, model=model)
     except Exception as exc:  # noqa: BLE001 - AI must never crash the audit
         logger.exception(
             "function=safe_generate_ai_summary | audit_id=%s status=error unexpected",
             audit_id,
         )
         return build_error_summary(
-            audit_id, f"Unexpected AI summary error: {exc}", language
+            audit_id, f"Unexpected AI summary error: {exc}", language, model=model
         )

@@ -679,9 +679,17 @@ export interface ScoreBreakdown {
 // Audit
 export interface AuditRequest {
   url: string;
-  email: string;
   report_name?: string | null;
   selected_urls?: string[] | null;
+  discovery_result?: DiscoveryResult | null;
+  scope?: AuditCheckType[] | null;
+  max_sites?: number | null;
+  max_depth?: number | null;
+  enable_ai_summary?: boolean;
+  // Which LLM provider to use for the AI summary. The matching API key is sent
+  // via the X-LLM-Api-Key header (never in this body) — see "AI summary" below.
+  llm_provider?: "openai" | "gemini" | "anthropic" | "openrouter" | null;
+  language?: "en" | "pl";
 }
 
 export interface AuditReport {
@@ -707,6 +715,45 @@ export interface ApiError {
   message: string;
 }
 ```
+
+---
+
+## AI summary — user-supplied LLM key
+
+The AI summary runs on the **user's own** LLM account. The user picks a provider and pastes
+an API key in the setup modal; the key is stored only in their browser (`localStorage`,
+under `sm.llmCredentials`) — never on our servers.
+
+**Validate a key** (the modal tests before saving):
+
+```
+POST /api/v1/ai/validate-key
+Headers: X-LLM-Api-Key: <user key>
+Body:    { "provider": "openai" | "gemini" | "anthropic" | "openrouter" }
+→ 200    { "ok": boolean, "model": string, "error"?: string }
+```
+
+**Run an audit with AI:** set `enable_ai_summary: true` and `llm_provider`, and send the key
+in the `X-LLM-Api-Key` header (the key never goes in the body, so it isn't logged/persisted):
+
+```
+POST /api/v1/audit/stream
+Headers: X-LLM-Api-Key: <user key>
+Body:    { ..., "enable_ai_summary": true, "llm_provider": "anthropic" }
+```
+
+Model + list price per 1M tokens (fixed per provider; shown in the modal):
+
+| Provider | Model | Input $/1M | Output $/1M |
+|---|---|---|---|
+| openai | GPT-5.4 mini | 0.75 | 4.50 |
+| gemini | Gemini 2.5 Flash | 0.30 | 2.50 |
+| anthropic | Claude Haiku 4.5 | 1.00 | 5.00 |
+| openrouter | Gemini 2.5 Flash | 0.30 | 2.50 |
+
+If AI is enabled without a configured key (or the server has `AI_SUMMARY_ENABLED=false`),
+the audit still completes and `AuditReport.ai_summary.status` is `"error"` with an
+explanatory message — the deterministic report is never blocked.
 
 ---
 

@@ -1,10 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { makeDiscoverFormSchema, type DiscoverFormValues } from "@/lib/schemas/discoverForm";
 import { useI18n } from "@/lib/i18n";
+import { useLlmKey } from "@/lib/llm/useLlmKey";
+import { LLM_PROVIDERS } from "@/lib/llm/providers";
+import { ApiKeyModal } from "./ApiKeyModal";
 
 export function DiscoverForm({
   onSubmit,
@@ -12,6 +15,8 @@ export function DiscoverForm({
   onSubmit: (values: DiscoverFormValues) => void;
 }) {
   const { dict } = useI18n();
+  const { credentials, isConfigured, save, clear } = useLlmKey();
+  const [modalOpen, setModalOpen] = useState(false);
   const schema = useMemo(
     () => makeDiscoverFormSchema(dict.discoverForm.validation),
     [dict],
@@ -19,13 +24,20 @@ export function DiscoverForm({
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<DiscoverFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { url: "", enable_ai_summary: false },
   });
 
+  // The AI summary requires a user-supplied key; clear the toggle if it's gone.
+  useEffect(() => {
+    if (!isConfigured) setValue("enable_ai_summary", false);
+  }, [isConfigured, setValue]);
+
   return (
+    <>
     <form
       onSubmit={handleSubmit(onSubmit)}
       noValidate
@@ -101,19 +113,59 @@ export function DiscoverForm({
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-md bg-background px-4 py-3 ring-1 ring-border">
-        <input
-          type="checkbox"
-          className="mt-0.5 size-4 accent-accent"
-          {...register("enable_ai_summary")}
-        />
-        <span className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium">{dict.discoverForm.aiSummaryTitle}</span>
-          <span className="text-xs leading-normal text-muted-foreground">
-            {dict.discoverForm.aiSummaryDescription}
+      <div className="flex flex-col gap-2 rounded-md bg-background px-4 py-3 ring-1 ring-border">
+        <label
+          className={`flex items-start gap-3 ${
+            isConfigured ? "cursor-pointer" : "cursor-not-allowed opacity-70"
+          }`}
+        >
+          <input
+            type="checkbox"
+            disabled={!isConfigured}
+            className="mt-0.5 size-4 accent-accent disabled:opacity-50"
+            {...register("enable_ai_summary")}
+          />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">{dict.discoverForm.aiSummaryTitle}</span>
+            <span className="text-xs leading-normal text-muted-foreground">
+              {dict.discoverForm.aiSummaryDescription}
+            </span>
           </span>
-        </span>
-      </label>
+        </label>
+        <div className="flex items-center justify-between gap-2 pl-7">
+          <span className="text-xs text-muted-foreground">
+            {isConfigured && credentials
+              ? dict.discoverForm.aiSummaryActive(
+                  LLM_PROVIDERS[credentials.provider].label,
+                  LLM_PROVIDERS[credentials.provider].model,
+                )
+              : dict.discoverForm.aiSummaryNeedsKey}
+          </span>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="shrink-0 text-xs font-medium text-accent hover:underline"
+          >
+            {isConfigured
+              ? dict.discoverForm.aiSummaryManageButton
+              : dict.discoverForm.aiSummarySetupButton}
+          </button>
+        </div>
+      </div>
     </form>
+
+    {modalOpen && (
+      <ApiKeyModal
+        onClose={() => setModalOpen(false)}
+        initialProvider={credentials?.provider}
+        hasExistingKey={isConfigured}
+        onSaved={(c) => save(c)}
+        onRemove={() => {
+          clear();
+          setModalOpen(false);
+        }}
+      />
+    )}
+    </>
   );
 }
