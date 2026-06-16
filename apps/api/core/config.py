@@ -35,9 +35,9 @@ class Settings(BaseSettings):
     audit_max_pages: int = 50
     audit_default_pages: int = 15
 
-    openrouter_api_key: str | None = None
+    # AI summary uses a user-supplied API key + provider (sent per request); there
+    # is no server-side LLM key. This flag is only a server-wide kill switch.
     ai_summary_enabled: bool = True
-    ai_summary_model: str = "google/gemini-2.5-flash"
     ai_summary_timeout_seconds: float = 45.0
     ai_summary_max_tokens: int = 8192
     ai_summary_max_tool_iterations: int = 4

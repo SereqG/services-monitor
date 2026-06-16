@@ -68,6 +68,10 @@ export const pl: Dictionary = {
     aiSummaryTitle: "Podsumowanie AI",
     aiSummaryDescription:
       "Otrzymaj zrozumiałe wyjaśnienie wyników audytu: ogólną kondycję strony, najważniejsze problemy i rekomendowane usprawnienia. Generowanie podsumowania AI trwa nieco dłużej i może zwiększyć koszt analizy.",
+    aiSummaryNeedsKey: "Dodaj własny klucz API, aby to włączyć.",
+    aiSummarySetupButton: "Skonfiguruj klucz API",
+    aiSummaryManageButton: "Zarządzaj kluczem",
+    aiSummaryActive: (provider: string, model: string) => `${provider} · ${model}`,
     validation: {
       urlRequired: "Adres URL jest wymagany",
       urlInvalid: "Podaj poprawny adres URL (np. https://example.com)",
@@ -76,6 +80,62 @@ export const pl: Dictionary = {
       maxPages: "Nie może przekraczać 500",
       minDepth: "Musi wynosić 0 lub więcej",
       maxDepth: "Nie może przekraczać 3",
+    },
+  },
+
+  apiKeyModal: {
+    title: "Użyj własnego klucza API",
+    subtitle:
+      "Podsumowania AI działają na Twoim koncie LLM. Wybierz dostawcę i wklej klucz API — przetestujemy go przed zapisaniem.",
+    providerLabel: "Dostawca",
+    keyLabel: "Klucz API",
+    modelLabel: "Model",
+    priceLabel: "Cena za 1 mln tokenów",
+    priceInput: "wej.",
+    priceOutput: "wyj.",
+    infoTitle: "Jak używamy Twojego klucza",
+    infoPoints: [
+      "Przechowywany wyłącznie w tej przeglądarce (localStorage) — nigdy na naszych serwerach.",
+      "Wysyłany do naszego backendu tylko po to, by przekazać żądanie podsumowania wybranemu dostawcy.",
+      "Podanie klucza odblokowuje podsumowanie AI; za użycie rozlicza Cię Twój dostawca.",
+    ],
+    guideTitle: "Jak zdobyć klucz",
+    guideOpenLink: "Otwórz stronę kluczy",
+    testButton: "Przetestuj i zapisz",
+    testingButton: "Testowanie klucza…",
+    cancelButton: "Anuluj",
+    removeButton: "Usuń klucz",
+    missingKey: "Najpierw wpisz klucz API.",
+    success: (model: string) => `Klucz działa — podsumowania AI użyją modelu ${model}.`,
+    failurePrefix: "Test klucza nie powiódł się:",
+    guides: {
+      openai: {
+        steps: [
+          "Zaloguj się na platform.openai.com/api-keys.",
+          "Kliknij „Create new secret key” i skopiuj go.",
+          "Upewnij się, że konto ma włączone płatności lub środki.",
+        ],
+      },
+      gemini: {
+        steps: [
+          "Zaloguj się na aistudio.google.com/apikey kontem Google.",
+          "Kliknij „Create API key” i skopiuj go.",
+        ],
+      },
+      anthropic: {
+        steps: [
+          "Otwórz console.anthropic.com → Settings → API Keys.",
+          "Kliknij „Create Key” i skopiuj go.",
+          "Upewnij się, że konto ma środki.",
+        ],
+      },
+      openrouter: {
+        steps: [
+          "Zaloguj się na openrouter.ai/keys.",
+          "Utwórz klucz i skopiuj go.",
+          "Dodaj środki do konta OpenRouter.",
+        ],
+      },
     },
   },
 

@@ -1,6 +1,28 @@
 import type { AuditEvent, AuditInput, AuditReport, AuditRequest, AuditResponse, DiscoveryEvent, DiscoveryRequest, DiscoveryResult, ValidationResult, ApiError } from "./types/api";
+import type { LlmProvider } from "./llm/providers";
+import type { LlmCredentials } from "./llm/useLlmKey";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export interface LlmKeyValidationResult {
+  ok: boolean;
+  model: string;
+  error?: string | null;
+}
+
+/** Ask the backend to make a tiny test call with the user's key. */
+export async function validateLlmKey(
+  provider: LlmProvider,
+  apiKey: string,
+): Promise<LlmKeyValidationResult> {
+  const res = await fetch(`${API_URL}/api/v1/ai/validate-key`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-LLM-Api-Key": apiKey },
+    signal: AbortSignal.timeout(60_000),
+    body: JSON.stringify({ provider }),
+  });
+  return handleResponse<LlmKeyValidationResult>(res);
+}
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -97,12 +119,21 @@ export async function runAudit(req: AuditRequest): Promise<AuditReport> {
 export async function streamAudit(
   req: AuditRequest,
   onProgress: (event: AuditEvent) => void,
+  credentials?: LlmCredentials | null,
 ): Promise<AuditReport> {
+  // The API key rides in a header (never the body) so it isn't persisted/logged;
+  // the provider goes in the body so the backend knows which model to call.
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const body: AuditRequest = { ...req };
+  if (credentials) {
+    headers["X-LLM-Api-Key"] = credentials.apiKey;
+    body.llm_provider = credentials.provider;
+  }
   const res = await fetch(`${API_URL}/api/v1/audit/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     signal: AbortSignal.timeout(300_000),
-    body: JSON.stringify(req),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok || !res.body) {

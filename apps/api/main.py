@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.exceptions import ServiceMonitorError, service_monitor_exception_handler
+from slices.ai_summary.router import router as ai_summary_router
 from slices.audit.router import router as audit_router
 from slices.discovery.router import router as discovery_router
 from slices.health_check.router import router as health_check_router
@@ -55,6 +56,7 @@ def create_app() -> FastAPI:
     app.include_router(seo_router, prefix="/api/v1")
     app.include_router(reporting_router, prefix="/api/v1")
     app.include_router(audit_router, prefix="/api/v1")
+    app.include_router(ai_summary_router, prefix="/api/v1")
 
     return app
 

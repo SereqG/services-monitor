@@ -5,7 +5,6 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from core.config import settings
 from core.exceptions import AiSummaryError
 from slices.ai_summary.schemas import (
     AiPageSummary,
@@ -48,11 +47,12 @@ def build_success_summary(
     overview: AiSummaryOverview,
     pages: list[AiPageSummary],
     language: str = "en",
+    model: str | None = None,
 ) -> AiSummary:
     return AiSummary(
         status=AiSummaryStatus.ok,
         audit_id=audit_id,
-        model=settings.ai_summary_model,
+        model=model,
         language=language,
         generated_at=datetime.now(tz=timezone.utc).isoformat(),
         summary=overview,
@@ -60,11 +60,16 @@ def build_success_summary(
     )
 
 
-def build_error_summary(audit_id: str, error: str, language: str = "en") -> AiSummary:
+def build_error_summary(
+    audit_id: str,
+    error: str,
+    language: str = "en",
+    model: str | None = None,
+) -> AiSummary:
     return AiSummary(
         status=AiSummaryStatus.error,
         audit_id=audit_id,
-        model=settings.ai_summary_model,
+        model=model,
         language=language,
         generated_at=datetime.now(tz=timezone.utc).isoformat(),
         error=error,

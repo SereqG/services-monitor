@@ -1,3 +1,5 @@
+import type { LlmProvider } from "../llm/providers";
+
 export type Severity = "critical" | "high" | "medium" | "low" | "info" | "informational";
 export type AccessibilitySeverity = "critical" | "serious" | "moderate" | "minor";
 export type HttpStatus = "ok" | "redirect" | "client_error" | "server_error" | "timeout" | "connection_error";
@@ -221,6 +223,8 @@ export interface AuditRequest {
   max_sites?: number | null;
   max_depth?: number | null;
   enable_ai_summary?: boolean;
+  /** Which LLM provider to use; the API key is sent via the X-LLM-Api-Key header. */
+  llm_provider?: LlmProvider | null;
   language?: "en" | "pl";
 }
 

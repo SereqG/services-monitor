@@ -68,6 +68,10 @@ export const en = {
     aiSummaryTitle: "AI-Powered Summary",
     aiSummaryDescription:
       "Get a simplified explanation of your audit results, including overall website health, key problems, and recommended improvements. AI summaries take slightly longer to generate and may increase processing cost.",
+    aiSummaryNeedsKey: "Add your own AI API key to enable this.",
+    aiSummarySetupButton: "Set up API key",
+    aiSummaryManageButton: "Manage key",
+    aiSummaryActive: (provider: string, model: string) => `${provider} · ${model}`,
     validation: {
       urlRequired: "URL is required",
       urlInvalid: "Must be a valid URL (e.g. https://example.com)",
@@ -76,6 +80,62 @@ export const en = {
       maxPages: "Cannot exceed 500",
       minDepth: "Must be 0 or greater",
       maxDepth: "Cannot exceed 3",
+    },
+  },
+
+  apiKeyModal: {
+    title: "Use your own AI API key",
+    subtitle:
+      "AI summaries run on your own LLM account. Pick a provider and paste an API key — we test it before saving.",
+    providerLabel: "Provider",
+    keyLabel: "API key",
+    modelLabel: "Model",
+    priceLabel: "Price per 1M tokens",
+    priceInput: "in",
+    priceOutput: "out",
+    infoTitle: "How your key is used",
+    infoPoints: [
+      "Stored only in this browser (localStorage) — never on our servers.",
+      "Sent to our backend only to relay the summary request to your chosen provider.",
+      "Providing a key unlocks the AI summary; your provider bills you for usage.",
+    ],
+    guideTitle: "How to get a key",
+    guideOpenLink: "Open key page",
+    testButton: "Test & save",
+    testingButton: "Testing key…",
+    cancelButton: "Cancel",
+    removeButton: "Remove key",
+    missingKey: "Enter an API key first.",
+    success: (model: string) => `Key works — AI summaries will use ${model}.`,
+    failurePrefix: "Key test failed:",
+    guides: {
+      openai: {
+        steps: [
+          "Sign in at platform.openai.com/api-keys.",
+          "Click “Create new secret key” and copy it.",
+          "Make sure your account has billing or credits enabled.",
+        ],
+      },
+      gemini: {
+        steps: [
+          "Sign in at aistudio.google.com/apikey with your Google account.",
+          "Click “Create API key” and copy it.",
+        ],
+      },
+      anthropic: {
+        steps: [
+          "Open console.anthropic.com → Settings → API Keys.",
+          "Click “Create Key” and copy it.",
+          "Make sure your account has credits.",
+        ],
+      },
+      openrouter: {
+        steps: [
+          "Sign in at openrouter.ai/keys.",
+          "Create a key and copy it.",
+          "Add credits to your OpenRouter account.",
+        ],
+      },
     },
   },
 

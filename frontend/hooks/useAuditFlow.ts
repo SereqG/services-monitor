@@ -6,6 +6,7 @@ import type { AuditReport, AuditCheckType, DiscoveryResult } from "@/lib/types/a
 import { ALL_AUDIT_CHECKS } from "@/lib/types/api";
 import type { DiscoverFormValues } from "@/lib/schemas/discoverForm";
 import { useI18n } from "@/lib/i18n";
+import { useLlmKey } from "@/lib/llm/useLlmKey";
 
 export type AppState = "idle" | "discovering" | "selecting" | "auditing" | "done" | "error";
 
@@ -32,6 +33,7 @@ function useClientTimer(active: boolean): number | null {
 
 export function useAuditFlow() {
   const { lang } = useI18n();
+  const { credentials } = useLlmKey();
   const [formValues, setFormValues] = useState<DiscoverFormValues>({
     url: "",
     enable_ai_summary: false,
@@ -106,6 +108,7 @@ export function useAuditFlow() {
           setAuditProgressMessages((prev) => [...prev, event.message]);
           if (event.max_duration_seconds != null) setAuditMaxDuration(event.max_duration_seconds);
         },
+        formValues.enable_ai_summary ? credentials : null,
       );
       setReport(result);
       setAppState("done");

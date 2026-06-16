@@ -5,6 +5,7 @@ from contextlib import ExitStack
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from core.config import settings
+from slices.ai_summary.providers import LLMCredentials
 from slices.ai_summary.schemas import AiSummary, AiSummaryStatus
 from slices.audit.schemas import AuditEventType, AuditRequest
 from slices.audit.service import run_audit, stream_audit
@@ -12,6 +13,7 @@ from slices.audit.tests.test_service import _discovery, _patches
 from slices.discovery.schemas import DiscoveredUrl
 
 _DISCOVERED = [DiscoveredUrl(url="https://example.com/", depth=0, status="allowed")]
+_CREDS = LLMCredentials(provider="openrouter", api_key="test-key")
 
 
 def _audit_patches():
@@ -25,20 +27,20 @@ def _audit_patches():
     )
 
 
-def _run(request: AuditRequest, ai_mock: AsyncMock):
+def _run(request: AuditRequest, ai_mock: AsyncMock, credentials=None):
     with ExitStack() as stack:
         for active in _audit_patches().values():
             stack.enter_context(active)
         stack.enter_context(
             patch("slices.audit.service.safe_generate_ai_summary", ai_mock)
         )
-        return asyncio.run(run_audit(MagicMock(), request))
+        return asyncio.run(run_audit(MagicMock(), request, credentials))
 
 
 def test_audit_without_ai_summary_leaves_field_none():
     request = AuditRequest(url="https://example.com/")
     ai_mock = AsyncMock()
-    report = _run(request, ai_mock)
+    report = _run(request, ai_mock, _CREDS)
 
     assert report.ai_summary is None
     ai_mock.assert_not_awaited()
@@ -46,13 +48,14 @@ def test_audit_without_ai_summary_leaves_field_none():
 
 
 def test_audit_with_ai_summary_attaches_successful_summary(monkeypatch):
-    monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
     monkeypatch.setattr(settings, "ai_summary_enabled", True)
-    request = AuditRequest(url="https://example.com/", enable_ai_summary=True)
+    request = AuditRequest(
+        url="https://example.com/", enable_ai_summary=True, llm_provider="openrouter"
+    )
     ai_mock = AsyncMock(
         return_value=AiSummary(status=AiSummaryStatus.ok, audit_id="a" * 32)
     )
-    report = _run(request, ai_mock)
+    report = _run(request, ai_mock, _CREDS)
 
     assert report.ai_summary is not None
     assert report.ai_summary.status == AiSummaryStatus.ok
@@ -60,30 +63,35 @@ def test_audit_with_ai_summary_attaches_successful_summary(monkeypatch):
 
 
 def test_audit_passes_request_language_to_ai_summary(monkeypatch):
-    monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
     monkeypatch.setattr(settings, "ai_summary_enabled", True)
     request = AuditRequest(
-        url="https://example.com/", enable_ai_summary=True, language="pl"
+        url="https://example.com/",
+        enable_ai_summary=True,
+        llm_provider="openrouter",
+        language="pl",
     )
     ai_mock = AsyncMock(
         return_value=AiSummary(status=AiSummaryStatus.ok, audit_id="a" * 32, language="pl")
     )
-    _run(request, ai_mock)
+    _run(request, ai_mock, _CREDS)
 
     # The chosen language must reach the AI layer as the trailing positional arg.
     ai_mock.assert_awaited_once()
     assert ai_mock.await_args.args[-1] == "pl"
+    # The user-supplied credentials must be passed through to the AI layer.
+    assert _CREDS in ai_mock.await_args.args
 
 
-def test_audit_ai_failure_does_not_break_audit(monkeypatch):
-    monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
-    request = AuditRequest(url="https://example.com/", enable_ai_summary=True)
+def test_audit_ai_failure_does_not_break_audit():
+    request = AuditRequest(
+        url="https://example.com/", enable_ai_summary=True, llm_provider="openrouter"
+    )
     ai_mock = AsyncMock(
         return_value=AiSummary(
             status=AiSummaryStatus.error, audit_id="a" * 32, error="LLM unavailable"
         )
     )
-    report = _run(request, ai_mock)
+    report = _run(request, ai_mock, _CREDS)
 
     # AI failed, but the deterministic audit still produced a full report.
     assert report.ai_summary.status == AiSummaryStatus.error
@@ -91,21 +99,34 @@ def test_audit_ai_failure_does_not_break_audit(monkeypatch):
     assert report.discovery is not None
 
 
-def test_audit_ai_enabled_without_api_key_yields_error_summary(monkeypatch):
-    monkeypatch.setattr(settings, "openrouter_api_key", None)
+def test_audit_ai_enabled_without_api_key_yields_error_summary():
     request = AuditRequest(url="https://example.com/", enable_ai_summary=True)
     ai_mock = AsyncMock()
-    report = _run(request, ai_mock)
+    report = _run(request, ai_mock, credentials=None)
 
     assert report.ai_summary.status == AiSummaryStatus.error
-    assert "not configured" in (report.ai_summary.error or "")
-    ai_mock.assert_not_awaited()  # LLM never called when unconfigured
+    assert "API key" in (report.ai_summary.error or "")
+    ai_mock.assert_not_awaited()  # LLM never called without a key
     assert report.score_breakdown is not None
 
 
-def test_stream_audit_emits_ai_summary_phase_events(monkeypatch):
-    monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
-    request = AuditRequest(url="https://example.com/", enable_ai_summary=True)
+def test_audit_ai_disabled_on_server_yields_error_summary(monkeypatch):
+    monkeypatch.setattr(settings, "ai_summary_enabled", False)
+    request = AuditRequest(
+        url="https://example.com/", enable_ai_summary=True, llm_provider="openrouter"
+    )
+    ai_mock = AsyncMock()
+    report = _run(request, ai_mock, _CREDS)
+
+    assert report.ai_summary.status == AiSummaryStatus.error
+    assert "disabled" in (report.ai_summary.error or "")
+    ai_mock.assert_not_awaited()
+
+
+def test_stream_audit_emits_ai_summary_phase_events():
+    request = AuditRequest(
+        url="https://example.com/", enable_ai_summary=True, llm_provider="openrouter"
+    )
     ai_mock = AsyncMock(
         return_value=AiSummary(status=AiSummaryStatus.ok, audit_id="a" * 32)
     )
@@ -118,7 +139,7 @@ def test_stream_audit_emits_ai_summary_phase_events(monkeypatch):
             stack.enter_context(
                 patch("slices.audit.service.safe_generate_ai_summary", ai_mock)
             )
-            async for event in stream_audit(MagicMock(), request):
+            async for event in stream_audit(MagicMock(), request, _CREDS):
                 events.append(event)
         return events
 
