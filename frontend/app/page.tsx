@@ -39,7 +39,7 @@ export default function Home() {
       <Header />
 
       <main className="mx-auto max-w-7xl px-6 py-12 md:px-8 md:py-16">
-        <section className="max-w-3xl">
+        <section className="">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3 py-1">
             <span className="size-1.5 animate-pulse rounded-full bg-accent" />
             <span className="font-mono text-[10px] uppercase tracking-widest text-accent">
