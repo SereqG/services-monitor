@@ -51,19 +51,19 @@ export const pl: Dictionary = {
   },
 
   home: {
-    engineOnline: "Silnik aktywny",
-    heroTitle: "Analizuj wydajność strony w czasie rzeczywistym.",
+    engineOnline: "Engine online",
+    heroTitle: "Analizuj wydajność stron internetowych i aplikacji.",
     heroSubtitle:
-      "Wklej adres URL, a my przejdziemy po stronie i przeprowadzimy pełny audyt — SEO, dostępność i kondycję techniczną. Wyniki przedstawimy prostym językiem, żebyś od razu wiedział, co poprawić w pierwszej kolejności.",
+      "Wklej adres URL, a my przejdziemy po stronie i przeprowadzimy pełny audyt. Sprawdzimy aplikację pod kątem SEO, dostępności i kondycji technicznej.",
   },
 
   discoverForm: {
     urlAriaLabel: "Adres strony",
     urlPlaceholder: "https://example.com",
-    discoverButton: "Znajdź podstrony",
+    discoverButton: "Rozpocznij",
     maxPages: "Maks. podstron",
     maxPagesAria: "Maksymalna liczba podstron do wykrycia",
-    maxDepth: "Maks. głębokość",
+    maxDepth: "Maks. głębokość poszukiwania",
     maxDepthAria: "Maksymalna głębokość przeszukiwania",
     aiSummaryTitle: "Podsumowanie AI",
     aiSummaryDescription:
@@ -86,18 +86,18 @@ export const pl: Dictionary = {
   apiKeyModal: {
     title: "Użyj własnego klucza API",
     subtitle:
-      "Podsumowania AI działają na Twoim koncie LLM. Wybierz dostawcę i wklej klucz API — przetestujemy go przed zapisaniem.",
+      "Wybierz dostawcę i wklej klucz API",
     providerLabel: "Dostawca",
     keyLabel: "Klucz API",
     modelLabel: "Model",
     priceLabel: "Cena za 1 mln tokenów",
-    priceInput: "wej.",
-    priceOutput: "wyj.",
+    priceInput: "in.",
+    priceOutput: "out.",
     infoTitle: "Jak używamy Twojego klucza",
     infoPoints: [
-      "Przechowywany wyłącznie w tej przeglądarce (localStorage) — nigdy na naszych serwerach.",
-      "Wysyłany do naszego backendu tylko po to, by przekazać żądanie podsumowania wybranemu dostawcy.",
-      "Podanie klucza odblokowuje podsumowanie AI; za użycie rozlicza Cię Twój dostawca.",
+      "Klucz nie jest zapisywany nigdzie poza pamięcią przeglądarki.",
+      "Nasz serwer używa klucza jedynie do generowania podsumowań AI",
+      "Podanie klucza odblokowuje podsumowanie AI. Za użycie rozlicza Cię Twój dostawca.",
     ],
     guideTitle: "Jak zdobyć klucz",
     guideOpenLink: "Otwórz stronę kluczy",
@@ -142,7 +142,7 @@ export const pl: Dictionary = {
   idle: {
     awaitingInput: "Oczekiwanie na dane",
     description:
-      "Podaj adres URL, aby rozpocząć. Najpierw przejdziemy po stronie i wykryjemy podstrony, a potem wybierzesz, które z nich poddać audytowi.",
+      "Podaj adres URL, aby rozpocząć. W pierwszej kolejności przejdziemy po stronie i wykryjemy podstrony, a następnie wybierzesz, które z nich poddać audytowi.",
   },
 
   errorView: {
@@ -151,7 +151,7 @@ export const pl: Dictionary = {
   },
 
   progress: {
-    maxSuffix: "maks.",
+    maxSuffix: "max",
   },
 
   urlSelection: {
@@ -201,7 +201,7 @@ export const pl: Dictionary = {
     auditComplete: "AUDYT_ZAKOŃCZONY",
     health: "Kondycja",
     overallScore: "Wynik ogólny",
-    scoreBreakdown: "Rozbicie wyniku",
+    scoreBreakdown: "Wyniki z poszczególnych kategorii",
     testResults: "Wyniki testów",
     discoverySummary: "Podsumowanie wykrywania",
     pagesDiscovered: "Wykryte podstrony",
@@ -218,7 +218,7 @@ export const pl: Dictionary = {
       seoDescription:
         "Wynik SEO na podstawie metatagów, nagłówków, canonical i danych strukturalnych.",
       a11yDescription:
-        "Wynik dostępności z heurystyk HTML (etap 2 doda axe-core).",
+        "Wynik dostępności z heurystyk HTML.",
     },
   },
 
@@ -280,15 +280,15 @@ export const pl: Dictionary = {
         note: "Atrybuty alt opisują obrazy czytnikom ekranu i są wykorzystywane przez wyszukiwarki.",
       },
       ogTitle: {
-        label: "Tytuł OG",
+        label: "Tytuł Open Graph",
         note: "Tytuł Open Graph decyduje o tym, jak wyświetla się tytuł strony przy udostępnianiu w mediach społecznościowych.",
       },
       ogDescription: {
-        label: "Opis OG",
+        label: "Opis Open Graph",
         note: "Opis Open Graph wyświetlany w podglądzie linku w mediach społecznościowych.",
       },
       ogImage: {
-        label: "Obraz OG",
+        label: "Obraz Open Graph",
         note: "Obraz Open Graph wyświetlany przy udostępnianiu strony w mediach społecznościowych.",
       },
       robots: {
