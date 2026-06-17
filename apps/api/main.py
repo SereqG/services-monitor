@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from core.config import settings
 from core.exceptions import ServiceMonitorError, service_monitor_exception_handler
@@ -38,6 +39,10 @@ def create_app() -> FastAPI:
     app.include_router(reporting_router, prefix="/api/v1")
     app.include_router(audit_router, prefix="/api/v1")
     app.include_router(ai_summary_router, prefix="/api/v1")
+
+    @app.get("/")
+    async def root() -> JSONResponse:
+        return JSONResponse({"message": "Server runs correctly"})
 
     return app
 
