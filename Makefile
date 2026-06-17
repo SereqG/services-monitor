@@ -19,6 +19,9 @@ api: ## Start backend (FastAPI)
 frontend: ## Start frontend (Next.js)
 	cd $(FRONT_DIR) && npm run dev
 
+venv: ## Create Python virtual environment in apps/api/.venv
+	python3 -m venv $(API_DIR)/.venv
+
 install: install-api install-frontend ## Install all dependencies
 
 install-api: ## Install backend dependencies

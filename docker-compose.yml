@@ -1,0 +1,16 @@
+services:
+  api:
+    build: ./apps/api
+    container_name: services-monitor-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: services-monitor-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: https://monitor.example.com
