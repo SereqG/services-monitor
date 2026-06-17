@@ -127,13 +127,13 @@ export function UrlSelectionView({
         <button
           onClick={onAudit}
           disabled={!canRunAudit}
-          className="rounded-md bg-primary px-8 py-3 text-sm font-bold uppercase tracking-tight text-primary-foreground transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md cursor-pointer bg-primary px-8 py-3 text-sm font-bold uppercase tracking-tight text-primary-foreground transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {dict.urlSelection.runAudit(selectedUrls.size, selectedChecks.size)}
         </button>
         <button
           onClick={onReset}
-          className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+          className="font-mono cursor-pointer text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
         >
           {dict.urlSelection.startOver}
         </button>
