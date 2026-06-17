@@ -14,6 +14,14 @@ class Settings(BaseSettings):
     app_name: str = "Services Monitor API"
     debug: bool = False
 
+    # Comma-separated list of browser origins allowed to call the API.
+    # Empty (the default) means no cross-origin access — safe by default.
+    cors_allowed_origins: str = ""
+
+    # Directory for the rotating log file. Empty means stdout only (the default,
+    # suitable for containers where logs are collected from stdout).
+    log_dir: str = ""
+
     http_timeout: float = 30.0
     http_max_redirects: int = 10
     user_agent: str = "ServiceMonitorBot/1.0 (+https://services-monitor.io/bot)"
@@ -35,6 +43,11 @@ class Settings(BaseSettings):
     ai_summary_max_tool_iterations: int = 4
     ai_storage_dir: str = ""
     summaries_dir: str = ""
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parsed, de-blanked list of allowed CORS origins."""
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
 
 settings = Settings()

@@ -5,15 +5,7 @@ from urllib.parse import urlparse
 
 from core.exceptions import InputValidationError, SSRFAttemptError
 from core.logging import logger
-
-_PRIVATE_NETWORKS = [
-    ipaddress.ip_network("10.0.0.0/8"),
-    ipaddress.ip_network("172.16.0.0/12"),
-    ipaddress.ip_network("192.168.0.0/16"),
-    ipaddress.ip_network("127.0.0.0/8"),
-    ipaddress.ip_network("::1/128"),
-    ipaddress.ip_network("fc00::/7"),
-]
+from core.ssrf import is_blocked_ip
 
 MAX_URL_LENGTH = 200
 
@@ -51,7 +43,12 @@ def validate_url(url: str) -> str:
 
 
 def _check_ssrf(host: str) -> None:
-    """Blocks localhost, private IPs, and internal hostnames."""
+    """Blocks localhost and non-public IP literals at submission time.
+
+    This is the fast, synchronous pre-check on the literal hostname. DNS
+    resolution and redirect-hop validation happen later at fetch time via
+    ``core.ssrf.assert_host_allowed`` (defence in depth).
+    """
     logger.info("function=_check_ssrf | host=%s", host)
     hostname = host.split(":")[0].lower()
 
@@ -61,16 +58,17 @@ def _check_ssrf(host: str) -> None:
 
     try:
         ip = ipaddress.ip_address(hostname)
-        for network in _PRIVATE_NETWORKS:
-            if ip in network:
-                logger.info(
-                    "function=_check_ssrf | result=blocked reason=SSRF_PRIVATE_IP hostname=%s network=%s",
-                    hostname, network,
-                )
-                raise SSRFAttemptError(
-                    "Access to private IP ranges is not allowed", code="SSRF_PRIVATE_IP"
-                )
     except ValueError:
-        pass  # domain name, not an IP — safe to proceed
+        logger.info("function=_check_ssrf | result=allowed hostname=%s", hostname)
+        return  # domain name, not an IP — resolved-IP safety is enforced at fetch time
+
+    if is_blocked_ip(ip) is not None:
+        logger.info(
+            "function=_check_ssrf | result=blocked reason=SSRF_PRIVATE_IP hostname=%s",
+            hostname,
+        )
+        raise SSRFAttemptError(
+            "Access to private IP ranges is not allowed", code="SSRF_PRIVATE_IP"
+        )
 
     logger.info("function=_check_ssrf | result=allowed hostname=%s", hostname)
