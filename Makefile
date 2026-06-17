@@ -32,7 +32,7 @@ install-frontend: ## Install frontend dependencies
 
 prod: ## Start in production mode: make prod [FRONT_PORT] [API_PORT] (defaults: 3000 8000)
 	@trap 'kill 0' INT; \
-	(cd $(API_DIR) && .venv/bin/uvicorn main:app --host 0.0.0.0 --port $(API_PORT)) & \
+	(cd $(API_DIR) && CORS_ALLOWED_ORIGINS=https://srv28-$(FRONT_PORT).wykr.es .venv/bin/uvicorn main:app --host 0.0.0.0 --port $(API_PORT)) & \
 	(cd $(FRONT_DIR) && NEXT_PUBLIC_API_URL=https://srv28-$(API_PORT).wykr.es npm run build && npm run start -- -p $(FRONT_PORT)) & \
 	wait
 
