@@ -2,7 +2,12 @@ API_DIR   := apps/api
 FRONT_DIR := frontend
 VENV      := $(API_DIR)/.venv/bin
 
-.PHONY: dev api frontend install install-api install-frontend venv
+# Parse port numbers passed as positional args: make prod <FRONT_PORT> <API_PORT>
+_ARGS      := $(filter-out $(firstword $(MAKECMDGOALS)),$(MAKECMDGOALS))
+FRONT_PORT ?= $(or $(word 1,$(_ARGS)),3000)
+API_PORT   ?= $(or $(word 2,$(_ARGS)),8000)
+
+.PHONY: dev api frontend install install-api install-frontend prod
 
 dev: ## Start backend and frontend concurrently
 	@trap 'kill 0' INT; \
@@ -25,5 +30,17 @@ install-api: ## Install backend dependencies
 install-frontend: ## Install frontend dependencies
 	cd $(FRONT_DIR) && npm install
 
+prod: ## Start in production mode: make prod [FRONT_PORT] [API_PORT] (defaults: 3000 8000)
+	@trap 'kill 0' INT; \
+	(cd $(API_DIR) && .venv/bin/uvicorn main:app --host 0.0.0.0 --port $(API_PORT)) & \
+	(cd $(FRONT_DIR) && npm run build && npm run start -- -p $(FRONT_PORT)) & \
+	wait
+
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*##"}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+
+# Absorb port numbers passed as positional make targets
+ifneq ($(_ARGS),)
+$(_ARGS):
+	@:
+endif
